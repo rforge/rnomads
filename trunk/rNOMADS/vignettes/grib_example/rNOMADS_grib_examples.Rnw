@@ -1,0 +1,492 @@
+\documentclass[12pt]{article}
+\usepackage{placeins}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\begin{document}
+\setkeys{Gin}{width=\textwidth}
+\title{Downloading and Analyzing Weather Forecast Data with rNOMADS using GRIB}
+\author{Daniel Bowman}
+\date{\today}
+\maketitle
+\tableofcontents
+
+\section{Motivation}
+
+I designed the rNOMADS package to provide a quick and easy interface to the NOAA Operational Model Archive and Distribution System.
+It can retrieve data in ascii format (this works for all operating systems) or in a binary format called GRIB (this works for Linux only at this time).
+This document describes downloading, reading, and displaying data in GRIB format.
+Please refer to the \href{http://www.unc.edu/\%7Ehaksaeng/rNOMADS/rNOMADS_dods_examples.pdf}{companion document} for information on ascii data download via GrADS-DODS.
+
+The GRIB portion of the rNOMADS package consists of two parts: a downloader that gathers data from the NOMADS website, and a reader that loads the model data into R.
+The reader requires the user to install \textbf{wgrib2}.
+wgrib2 is a set of routines for processing GRIB files and can be downloaded \href{http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/}{here}.
+
+The rNOMADS package provides access to GRIB file for 54 models.
+This vignette shows how to download data from the Global Forecast System 0.5 x 0.5 degree model.
+This model describes the state of the atmosphere across the entire planet in 0.5 by 0.5 degree cells.
+The model divides the atmosphere into 64 layers.
+It produces forecasts for every 3 hours out to 192 hours.
+
+The following examples demonstrate some useful things that can be accomplished with rNOMADS.
+
+\section{Making Global Weather Maps}
+
+Here, we make five maps.
+The first four are for the analysis forecast - the state of the weather at the time the model was run.
+Figure \ref{fig:2m_temp} is the temperature at 2 meters above the ground.
+High altitude regions such as Tibet and the Andes show up quite well.
+Figure \ref{fig:300mb_temp} is the temperature at the 300 mb pressure level - approximately the height of the jet stream.
+Figure \ref{fig:2m_rh} is the relative humidity at 2 meters above the ground.
+Note how desert regions of the world are clearly depicted.
+Figure \ref{fig:300mb_wind} is the wind speed at 300 mb.
+This is generally where the jet stream shows up.
+The last figure (Figure \ref{fig:ground_gust}) is the surface wind gust forecast 6 hours from now.
+Hurricanes and tropical storms appear as small circular regions in this map.
+
+
+\subsection{Code}
+
+<<>>=
+#Get model data:
+#Planetary temperature, relative humidity, winds 
+#at 2 m above ground and at 300 mb (jet stream level)
+
+library(GEOmap)
+library(rNOMADS)
+library(fields)
+
+#Get the latest 2 model instances
+urls.out <- CrawlModels(abbrev = "gfs_hd", 
+    depth = 2, verbose = FALSE)
+
+#Get the available predictions.
+#If this throws an error, try urls.out[2]
+#because sometimes the web page appears before the data does
+
+model.parameters <- ParseModelPage(urls.out[1])
+latest.pred <- model.parameters$pred[1]
+levels <- c("2 m above ground", "300 mb")
+variables <- c("TMP", "RH", "UGRD", "VGRD")
+resolution <- c(0.5, 0.5)
+
+#Download model file
+grib.info <- GribGrab(urls.out[1], latest.pred, 
+    levels, variables, verbose = FALSE)
+
+#Read the model file
+grb.data <- ReadGrib(grib.info$file.name, levels, variables)
+
+#Make an array for quick indexing
+atmos <- ModelGrid(grb.data, resolution)
+@
+
+<<>>=
+#FIGURE 1
+#Temperature at ground level
+
+
+#Get variable and level indices
+li <- which(atmos$levels == "2 m above ground")
+vi <- which(atmos$variables == "TMP")
+
+
+#Set up color scale
+colormap <- rev(rainbow(500, start = 0 , end = 5/6))
+
+#Save image to PNG file
+#Omit this line if you want to display image
+#rather than save to file
+png(file = "fig_ground_temp.png", width = 1000, height = 750)
+
+#Make forecast image
+image(atmos$x + 180, sort(atmos$y), atmos$z[li,vi,,], col = colormap,
+    xlab = "Longitude", ylab = "Latitude",
+    main = paste("World Temperature at Ground Level:", atmos$fcst.date))
+
+#Plot coastlines
+plotGEOmap(coastmap, border = "black", add = TRUE, 
+    MAPcol = NA, shiftlon = 180)
+
+#Turn of PNG device
+#Omit this line if you want to display image
+#rather than save to file
+dev.off()
+@
+
+<<>>=
+#FIGURE 2
+#Temperature at 300 mb
+
+li <- which(atmos$levels == "300 mb")
+vi <- which(atmos$variables == "TMP")
+colormap <- rev(rainbow(500, start = 0 , end = 5/6))
+png(file = "fig_300mb_temp.png", width = 1000, height = 750)
+image(atmos$x + 180, atmos$y, atmos$z[li,vi,,], col = colormap,
+    xlab = "Longitude", ylab = "Latitude", 
+    main = paste("World Temperature at 300 mb:", atmos$fcst.date))
+plotGEOmap(coastmap, border = "black", add = TRUE, 
+    MAPcol = NA, shiftlon = 180)
+dev.off()
+@
+
+<<>>=
+#FIGURE 3
+#Relative humidity at ground level
+
+li <- which(atmos$levels == "2 m above ground")
+vi <- which(atmos$variables == "RH")
+colormap <- rainbow(500, start = 0 , end = 5/6)
+png(file = "fig_ground_rh.png", width = 1000, height = 750)
+image(atmos$x + 180, atmos$y, atmos$z[li,vi,,], col = colormap,
+    xlab = "Longitude", ylab = "Latitude", 
+    main = paste("World Relative Humidity at Ground Level:", 
+    atmos$fcst.date))
+plotGEOmap(coastmap, border = "black", add = TRUE,
+    MAPcol = NA, shiftlon = 180)
+dev.off()
+@
+
+<<>>=
+#FIGURE 4
+#Winds at 300 mb (around jet stream level)
+
+li <- which(atmos$levels == "300 mb")
+vi <- which(atmos$variables == "UGRD")
+ew.winds <- atmos$z[li,vi,,]
+vi <- which(atmos$variables == "VGRD")
+ns.winds <- atmos$z[li,vi,,]
+winds.vel <- sqrt(ew.winds^2 + ns.winds^2)
+colormap <- rainbow(500, start = 0 , end = 5/6)
+png(file = "fig_300mb_winds.png", width = 1000, height = 750)
+image(atmos$x + 180, atmos$y, winds.vel, col = colormap,
+    xlab = "Longitude", ylab = "Latitude", 
+    main = paste("World Wind Velocity at 300 mb:", atmos$fcst.date))
+plotGEOmap(coastmap, border = "black", add = TRUE,
+    MAPcol = NA, shiftlon = 180)
+dev.off()
+@ 
+
+<<>>=
+#Get model data
+#and plot surface wind gust for the 6 hour forecast
+
+variables <- c("GUST")
+levels <- c("surface")
+resolution <- c(0.5, 0.5)
+
+#Get the latest 2 model instances
+urls.out <- CrawlModels(abbrev = "gfs_hd",
+    depth = 2, verbose = FALSE)
+
+#Get the available predictions.
+#If this throws an error, try urls.out[2]
+#because sometimes the web page appears before the data does
+
+model.parameters <- ParseModelPage(urls.out[1])
+
+#Get 6 hr prediction
+#This will be 6 to 12 hours from now
+#depending on when the model was run
+
+pred.6hr <- model.parameters$pred[grep("06$", model.parameters$pred)]
+
+
+grib.info <- GribGrab(urls.out[1], pred.6hr, 
+    levels, variables, verbose = FALSE)
+
+grb.data <- ReadGrib(grib.info$file.name, levels, variables)
+
+#Make an array for quick indexing
+atmos <- ModelGrid(grb.data, resolution)
+
+li <- which(atmos$levels == "surface")
+vi <- which(atmos$variables == "GUST")
+
+#FIGURE 5
+png(file = "fig_ground_gust.png", width = 1000, height = 750)
+image(atmos$x + 180, atmos$y, atmos$z[li, vi, ,], col = colormap,
+    xlab = "Longitude", ylab = "Latitude",
+    main = paste("World Wind Gust at Ground Surface:", atmos$fcst.date))
+plotGEOmap(coastmap, border = "black", add = TRUE,
+    MAPcol = NA, shiftlon = 180)
+dev.off()
+
+@
+
+\subsection{Figures}
+
+\FloatBarrier
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_ground_temp.png}
+\end{center}
+\caption{Temperature at 2 m above ground (red is hot, purple is cold).  
+Note how high altitude regions show up as cold spots.}
+\label{fig:2m_temp}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_300mb_temp.png}
+\end{center}
+\caption{Temperature of the upper troposphere (red is hot, purple is cold).  
+Note how there is little relation between the location of continents and temperature.}
+\label{fig:300mb_temp}
+\end{figure}
+
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_ground_rh.png}
+\end{center}
+\caption{Relative humidity at 2 m above the ground (purple is high, red is low).
+Desert regions show up nicely.}
+\label{fig:2m_rh}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_300mb_winds.png}
+\end{center}
+\caption{Wind velocity in the upper troposphere (purple is fast, red is slow).
+Jet streams may show up here as patchy regions of intense wind.}
+\label{fig:300mb_wind}
+\end{figure}
+
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_ground_gust.png}
+\end{center}
+\caption{Wind gust speed at the ground surface 6 hours from now (purple is fast, red is slow).
+Hurricanes and tropical storms show up as small purple dots.}
+\label{fig:ground_gust}
+\end{figure}
+
+\FloatBarrier
+
+\section{Creating Atmospheric Profiles}
+
+We can generate data for specific points very quickly with rNOMADS.
+In this case, we will investigate the temperature and wind speed versus height directly above the University of North Carolina at Chapel Hill.
+The tropopause is clearly visible in the temperature profile (Figure \ref{fig:temp_profile}).
+Wind speeds can be surprisingly high at times (Figure \ref{fig:wind_profile}).
+We then show a quick calculation of sound velocity versus height (Figure \ref{fig:c_profile}) using the formula:
+\begin{equation}
+c = 331.3 \sqrt{1 + \frac{T}{273.15}}
+\end{equation}
+where $c$ is the speed of sound in dry air and $T$ is the temperature in degrees Celsius.
+This does not take into account wind speed (a significant omission!).
+
+Finally, we end with a calculation of atmospheric density versus height (Figure \ref{fig:rho_profile}) via
+\begin{equation}
+\rho = \frac{p}{R_{specific} T}
+\end{equation}
+where $\rho$ is density, $p$ is pressure, $R_{specific}$ is the specific gas constant for dry air and $T$ is temperature.
+
+\subsection{Code}
+
+<<>>=
+
+library(rNOMADS)
+
+#Get the latest 2 model instances
+urls.out <- CrawlModels(abbrev = "gfs_hd",
+    depth = 2, verbose = FALSE)
+resolution <- c(0.5, 0.5)
+grid.type <- "latlon"
+
+#Get the available predictions.
+#If this throws an error, try urls.out[2]
+#because sometimes the web page appears before the data does
+
+model.parameters <- ParseModelPage(urls.out[1])
+
+#Get latest prediction
+
+pred.now <- model.parameters$pred[1]
+
+#Get temperatures, winds, and elevations for whole atmosphere
+
+pressure <- c(1, 2, 3, 5, 7, 
+   10, 20, 30, 50, 70,
+   seq(100, 1000, by = 25))
+
+levels <- paste(pressure, " mb", sep = "")
+
+#Height, temp, e-w wind, n-s wind
+variables <- c("HGT", "TMP", "UGRD", "VGRD")
+
+#Location to examine
+lon <- -79.052104
+lat <- 35.907553
+
+#Get profile
+profile <- RTModelProfile(urls.out[1], pred.now, levels, variables,
+         lon, lat, resolution, grid.type, spatial.average = TRUE)
+
+#Get height in meters
+hgti <- which(profile$variables == "HGT")
+hgt <- profile$profile.data[[1]][,hgti]
+
+@
+
+<<>>=
+
+#FIGURE 6 - temperature
+
+
+vi <- which(profile$variables == "TMP")
+tmp <- profile$profile.data[[1]][,vi] - 273.15
+
+#Let's make a spline
+
+tmp.spline <- splinefun(hgt, tmp, method = "natural")
+
+synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
+synth.tmp <- tmp.spline(synth.hgt)
+
+png(file = "fig_tmp_profile.png", width = 500, height = 500)
+
+plot(tmp, hgt, pch = 19, col = "red", 
+   xlab = "Temperature (C)", ylab = "Height (m)",
+   main = paste("Temperature versus Geopotential Height:",  
+   atmos$fcst.date))
+lines(synth.tmp, synth.hgt, col = "blue")
+legend("topright", col = c("red", "blue"), pch = c(19, NA),
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+dev.off()
+
+@
+
+<<>>=
+
+#FIGURE 7 - Wind Speed
+
+wui <- which(profile$variables == "UGRD")
+wvi <- which(profile$variables == "VGRD")
+
+wu <- profile$profile.data[[1]][, wui]
+wv <- profile$profile.data[[1]][, wvi]
+wvel <- sqrt(wu^2 + wv^2) 
+
+#Convert to km/hr
+wvel <- wvel * 3.6
+
+#Let's make a spline 
+
+tmp.spline <- splinefun(hgt, wvel, method = "natural")
+
+synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
+synth.wvel <- tmp.spline(synth.hgt)
+
+png(file = "fig_wind_profile.png", width = 500, height = 500)
+
+plot(wvel, hgt, pch = 19, col = "red",
+   xlab = "Wind Speed (km/hr)", ylab = "Height (m)",
+   main = paste("Wind Speed versus Geopotential Height:",  
+   atmos$fcst.date))
+lines(synth.wvel, synth.hgt, col = "blue")
+legend("bottomright", col = c("red", "blue"), pch = c(19, NA),
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+dev.off()
+
+@
+
+<<>>=
+
+#FIGURE 8
+#NAIVE SOUND SPEED
+
+#Assuming it only depends on temperature
+#Let's make a spline
+
+tmp.spline <- splinefun(hgt, tmp, method = "natural")
+
+synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
+synth.tmp <- tmp.spline(synth.hgt)
+
+c <- 331.5 * sqrt(1 + tmp / 273.15)
+synth.c <- 331.5 * sqrt(1 + synth.tmp / 273.15)
+
+png(file = "fig_sound_profile.png", width = 500, height = 500)
+
+plot(c, hgt, pch = 19, col = "red",
+   xlab = "Speed of Sound (m/s)", ylab = "Height (m)",
+   main = paste("Speed of Sound versus Geopotential Height:",  
+   atmos$fcst.date))
+lines(synth.c, synth.hgt, col = "blue")
+legend("topright", col = c("red", "blue"), pch = c(19, NA),
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+dev.off()
+
+@
+
+<<>>=
+
+#FIGURE 8
+#ATMOSPHERIC DENSITY (ASSUMING DRY AIR)
+
+p <- as.numeric(gsub("\\D", "", profile$levels)) * 100
+R <- 287.058 #Specific gas constant, J/(kg * K)
+
+rho <- p / ((tmp + 273.15) * R) #Air density
+
+rho.spline <- splinefun(hgt, rho, method = "natural")
+synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
+synth.rho <- rho.spline(synth.hgt)
+
+png(file = "fig_density_profile.png", width = 500, height = 500)
+
+plot(rho, hgt, pch = 19, col = "red",
+   xlab = "Density (kg/m3)", ylab = "Height (m)",
+   main = paste("Dry Air Density versus Geopotential Height:",
+   atmos$fcst.date))
+lines(synth.rho, synth.hgt, col = "blue")
+legend("topright", col = c("red", "blue"), pch = c(19, NA),
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+dev.off()
+
+@
+
+\subsection{Figures}
+
+\FloatBarrier
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_tmp_profile.png}
+\end{center}
+\caption{Temperature profile of the atmosphere near Chapel Hill, North Carolina.}
+\label{fig:temp_profile}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_wind_profile.png}
+\end{center}
+\caption{Wind speed profile of the atmosphere near Chapel Hill, North Carolina.}
+\label{fig:wind_profile}
+\end{figure}
+
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_sound_profile.png}
+\end{center}
+\caption{Sound speed profile of the atmosphere near Chapel Hill, North Carolina.
+This calculation assumes temperature dependence only.}
+\label{fig:c_profile}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\includegraphics{fig_density_profile.png}
+\end{center}
+\caption{Air profile of the atmosphere near Chapel Hill, North Carolina.
+This calculation assumes that the air is perfectly dry.}
+\label{fig:rho_profile}
+\end{figure}
+
+\end{document}
