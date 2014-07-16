@@ -1,6 +1,6 @@
 #use the GrADS-DODS capability of NOMADS to get ascii data
 
-GetDODSDates <- function(abbrev, archive = FALSE, request.sleep = 0) {
+GetDODSDates <- function(abbrev, archive = FALSE, request.sleep = 1) {
     #Checks the GrADS data server to see what dates and model subsets are available for model specified by ABBREV.
     #INPUTS
     #    ABBREV - Model abbreviation
