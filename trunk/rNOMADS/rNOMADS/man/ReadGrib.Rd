@@ -10,7 +10,7 @@ It does this by building an argument string, executing a system call to the appr
 Note that \code{wgrib2} must be installed for \code{ReadGrib} to work for current grib files, and \code{wgrib} may need to be installed when looking at archived data.
 }
 \usage{
-ReadGrib(file.name, levels, variables, file.type = "grib2")
+ReadGrib(file.name, levels, variables, file.type = "grib2", missing.data=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -26,6 +26,10 @@ The path and file name of the grib file to read.
   \item{file.type}{
   Whether the file is in GRIB (\code{"grib1"}) or GRIB2 (\code{"grib2"}) format.
   Default is \code{"grib2"}.
+}
+  \item{missing.data}{
+  Replace missing data in grib archive with this value.
+  If \code{NULL}, leave the data out.  Only works with wgrib2. Default \code{NULL}.
 }
 }
 \details{

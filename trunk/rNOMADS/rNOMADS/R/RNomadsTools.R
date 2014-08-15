@@ -1,59 +1,5 @@
 #Functions for doing specific useful tasks with rNOMADS
 
-RTModelProfile <- function(model.url, pred, levels, variables, lon, lat, resolution, grid.type, model.domain = NULL, spatial.average = FALSE, verbose = TRUE) {
-   #Get variables and levels for a list of points, utilizing nearest neighbor interpolation if requested
-   #INPUTS
-   #    MODEL.URL - Where the model is located, returned from CrawlModels
-   #    PRED - Which prediction to download
-   #    VARIABLES - Model variables to get for profile
-   #    LEVELS - Model levels to get for profile
-   #    LON - List of longitudes
-   #    LAT - List of latitudes
-   #    RESOLUTION - Resolution of model, in degrees if Lat/Lon, in kilometers if cartesian, as a 2 element vector (ZONAL, MERIDIONAL)
-   #    GRID.TYPE - If the horizontal part of the model is Lat/Lon or cartesian.
-   #       "latlon" if Lat/Lon, "cartesian" if cartesian.
-   #    MODEL.DOMAIN - a vector of latitudes and longitudes that specify the area to return a forecast for
-   #        If NULL, get 1 degree past limits of LON and LAT
-   #    SPATIAL.AVERAGE - Perform nearest neighbor interpolation for 4 grid nodes to get average profile at a specific point.  Default FALSE.  If FALSE, get data from nearest grid node.
-   #OUTPUTS
-   #    PROFILE.DATA - Table of pressures and requested variables
-   #    SPATIAL.AVERAGING - What kind of spatial interpolation was used, if any
-   #    PRED - is the exact model run you want, generally from ParseModelPage
-   #    VARIABLES - Model variables, in the order presented in PROFILE.DATA
-   #    LEVELS - Model levels, in the order presented in PROFILE.DATA
-   #    MODEL.DATE - When the model was run
-   #    DATE - What date was requested for the data
-
-   
-
-   if(is.null(model.domain)) {
-       model.domain <- c(min(lon), max(lon), max(lat), min(lat)) + c(-1, 1, 1, -1)
-   }
- 
-   if(spatial.average) {
-      spatial.average.method <- "Multilevel B-Splines using MBA::mba.points"
-   } else {
-      spatial.average.method <- "Nearest Node"
-   }
-
-
-   grib.info <- GribGrab(model.url, pred, levels, variables, model.domain = model.domain, verbose = verbose)
-   grib.data <- ReadGrib(file.path(grib.info$local.dir, grib.info$file.name), levels, variables)
-   gridded.data <- ModelGrid(grib.data, resolution, grid.type = grid.type)
-
-   l.i <- sort(as.numeric(unlist(stringr::str_extract_all(gridded.data$levels, "\\d+"))), index.return = TRUE, decreasing = TRUE)
-   profile.data <- NULL
-   for(k in seq_len(length(lat))) {
-       profile.data[[k]] <- BuildProfile(gridded.data, lon[k], lat[k], spatial.average)[l.i$ix,]
-   }
-   profile <- list(profile.data = profile.data, spatial.averaging = spatial.average.method,
-       variables = gridded.data$variables, lat = lat, lon = lon,
-       levels = gridded.data$levels[l.i$ix], model.date = gridded.data$model.run.date, forecast = pred, model.url = model.url,
-       forecast.date = gridded.data$forecast.date)
-   invisible(profile)       
-}
-
-
 GetClosestGFSForecasts <- function(forecast.date, model.date = "latest", depth = NULL, verbose = TRUE) {
  #Figure out the closest GFS forecasts to a given date, returns both the closest forecast behind and the closest forecast ahead, as well as how far beind and how far ahead
    #INPUTS
@@ -275,3 +221,280 @@ MagnitudeAzimuth <- function(zonal.wind, meridional.wind) {
    az[tmp.az < 0] <- 360 + tmp.az[tmp.az < 0]
    return(list(magnitude = mag, azimuth = az))
 }
+
+PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range = c(0, 50), 
+    height.range = c(0, 50000), points = TRUE, lines = FALSE,
+    radial.axis = TRUE, elev.circles = NULL, elev.labels = NULL, radial.lines = NULL,
+    colorbar = TRUE, colorbar.label = NULL, north.label = TRUE, invert = FALSE, ...) {
+    #Plot a graphical representation of wind speed and direction, with lowest elevations closest to the center and highest elevations towards the edge.
+    #INPUTS
+    #    ZONAL.WIND - East-west wind speed.  Can be a vector or a list of vectors
+    #    MERIDIONAL.WIND - North-South wind speed.  Can be a vector or a list of vectors.
+    #    HEIGHT - Height above reference point.  Can be a vector or list of vectors.
+    #    MAGNITUDE.RANGE - Ranges of wind speed to plot, defaults to c(0, 50)
+    #    HEIGHT.RANGE - Which heights to plot, defaults to c(0, 50000)
+    #    POINTS - Do you want to plot data points as points?  You can use optional parameters to set the type and appearance of these points. Default TRUE.
+    #    LINES - DO you want to plot your data as lines?  You can use optional parameters to set the type and appearance of these lines. Default FALSE.
+    #    RADIAL.AXES - Plot an axis around the figure
+    #    ELEV.CIRCLES - A vector of elevations to plot as a grid.  Default NULL
+    #    ELEV.LABELS - Labels to put above each elevation circle
+    #    RADIAL.LINES - A vector of azimuths to plot.  Default NULL
+    #    COLORBAR - Whether to put a colorbar of wind magnitudes
+    #    COLORBAR.LABEL - What to label your colorbar
+    #    NORTH.LABEL - whether to label north. Default TRUE.
+    #    INVERT - Whether to reverse the plot, so that higher elevations are towards the center and lower elevations are towards the outer edges.
+    #OPTIONAL INPUTS (via ...)
+    #    R.AXIS - radius of plot axis
+    #    TICK.LEN - length of azimuth ticks
+    #    R.AXIS.TICKS - Whether or not to put tick marks on the outer axis
+    #    MAX.AZ - If plotting lines and the difference between two segments is greater than this value, interpolate between them to make things smooth
+    #    COLOR.MAP - A list of colors to use, defaults to rainbow(n, 0, 5/6)
+    #    N.COLS - Number of color bins in color map
+    #    POINT.CEX - size of points, if plotted
+    #    PCH - Plot character of points, if plotted
+    #    LTY - Line style, if lines are selected
+    #    LWD - Line thickness, if lines are selected
+    #    COLORBAR.TICK - Where to put labels on colorbar
+   
+    opts <- list(...)
+    o.n <- names(opts)
+    r <- 1
+
+    if(! "r.axis" %in% o.n) {
+        r.axis <- 1.2
+    } else {
+        r.axis <- opts$r.axis
+    }
+
+    if(! "tick.len" %in% o.n) {
+        tick.len <- r / 20 
+    } else {
+        tick.len <- opts$tick.len
+    }
+    
+    if(! "r.axis.ticks" %in% o.n) {
+        r.axis.ticks <- TRUE
+    } else {
+        r.axis.ticks <- opts$r.axis.ticks
+    }
+
+    if(! "max.az" %in% o.n) {
+        max.az <- 5
+    } else {
+        max.az <- opts$max.az
+    }
+
+    if(!"n.cols" %in% o.n) {
+        n.cols <- 500
+    } else {
+        n.cols <- opts$n.cols
+    }
+
+    if(!"color.map" %in% o.n) {
+       color.map <- rainbow(n.cols, start = 0, end = 5/6)           
+    } else {
+       color.map <- opts$color.map
+    }
+
+    if(!"point.cex" %in% o.n) {
+        point.cex <- 1
+    } else {
+        point.cex <- opts$point.cex
+    }
+
+    if(!"pch" %in% o.n) {
+        pch <- 1
+    } else {
+       pch <- opts$pch
+    }
+
+    if(!"lty" %in% o.n) {
+        lty <- 1
+    } else {
+        lty <- opts$lty
+    }
+
+    if(!"lwd" %in% o.n) {
+        lwd <- 1
+    } else {
+       lwd <- opts$lwd
+    }
+
+
+    if(!"colorbar.tick" %in% o.n) {
+        colorbar.tick <- seq(magnitude.range[1], magnitude.range[2], length.out = 6)
+    } else {
+        colorbar.tick <- opts$colorbar.tick
+    }
+
+    rng <- max(height.range) - min(height.range)
+
+    plot(c(-r.axis - tick.len * 4, r.axis + tick.len * 4) + r/5, 
+        c(-r.axis - tick.len * 4, r.axis + tick.len * 4), asp = 1, 
+        type = "n", axes = FALSE, xlab = "", ylab = "") 
+
+    if(radial.axis) {
+        angs <- seq(0, 2 * pi, length.out = 1000)
+        circ.axis <- list(x = r.axis * cos(angs), y = r.axis * sin(angs))
+        lines(circ.axis)
+        if(r.axis.ticks) {
+            circ.ticks <- seq(0, 360, by = 45)[1:8] * pi/180
+            tick.len <- r/20
+            segments(r.axis * cos(circ.ticks), r.axis * sin(circ.ticks),
+                r.axis * cos(circ.ticks) + tick.len * cos(circ.ticks),
+                r.axis * sin(circ.ticks) + tick.len * sin(circ.ticks))
+        }
+   }
+
+   if(north.label) { 
+       text(0, r.axis + tick.len * 2, lab = "North")
+   }
+
+   interp.len <- 100  #Number of points in azimuth interpolation, if necessary
+
+   if(! is.list(zonal.wind)) {
+       zonal.wind <- list(zonal.wind)
+       meridional.wind <- list(meridional.wind)
+       height <- list(height)
+   }
+
+   color.scale <- seq(magnitude.range[1], magnitude.range[2], length.out = n.cols) #Wind color scale
+
+   for(k in 1:length(zonal.wind)) {
+       hgt.ind <- which(height[[k]] >= height.range[1] & height[[k]] <= height.range[2])
+       maz <- MagnitudeAzimuth(zonal.wind[[k]][hgt.ind], meridional.wind[[k]][hgt.ind])
+       hgt <- height[[k]][hgt.ind] - min(height.range)
+       if(invert) {
+           hgt <- rev(hgt)
+       }
+       if(points) {
+           point.col <- c()
+           for(j in 1:length(maz$azimuth)) {
+                point.col <- append(point.col, color.map[which(abs(maz$magnitude[j] - color.scale) == min(abs(maz$magnitude[j] - color.scale)))])
+           }
+           points(r * hgt/rng * sin((pi / 180) * maz$azimuth),
+               r * hgt/rng * cos((pi / 180) * maz$azimuth), 
+               col = point.col, cex = point.cex, pch = pch)
+       }
+       if(lines) {
+           m <- c()
+           h <- c()
+           azs <- c(maz$azimuth, tail(maz$azimuth, 1))
+           tmp.az <- c()
+           for(j in 1:length(maz$azimuth)) {
+               if(abs(azs[j] - azs[j + 1]) < max.az) {
+                   m <- append(m, maz$magnitude[j])
+                   h <- append(h, hgt[j])
+                   tmp.az <- append(tmp.az, azs[j])
+               } else { #Smooth out large azimuth swings (usually at low wind speeds)
+                   #If we do not cross north
+                   if((abs(azs[j] - (azs[j + 1] + 360)) > (abs(azs[j] - azs[j +1]))) & (abs(azs[j] + 360 - azs[j + 1]) > abs(azs[j] - azs[j + 1]))) {
+                       tmp.az <- append(tmp.az, seq(azs[j], azs[j +1], length.out = interp.len))
+                       #If we cross north, going clockwise
+                   } else if (abs(azs[j] - (azs[j + 1] + 360)) < abs(azs[j] - azs[j + 1])) {
+                       tmp.az <-  append(tmp.az, seq(azs[j], azs[j + 1] + 360, length.out = interp.len))
+                   #If we cross north, going anticlockwise
+                   } else {
+                       tmp.az <-  append(tmp.az, seq(azs[j] + 360, azs[j + 1], length.out = interp.len))
+                  }
+                  m <- append(m, seq(maz$magnitude[j], maz$magnitude[j + 1], length.out = interp.len))
+                  h <- append(h, seq(hgt[j], hgt[j + 1], length.out = interp.len))
+               }
+            }
+            x <- r * h/rng * sin((pi / 180) * tmp.az)
+            y <- r * h/rng * cos((pi / 180) * tmp.az)
+            line.col <- c()
+            for(j in 1:length(m)) {
+               line.col <- append(line.col, color.map[which(abs(m[j] - color.scale) == min(abs(m[j] - color.scale)))])
+            }
+            segments(x[2:length(m)], y[2:length(m)], x[1:(length(m) - 1)], y[1:(length(m) - 1)], 
+                col = line.col, lty = lty, lwd = lwd)
+        }
+   }
+
+   #Altitude axes and labels
+   text.loc <- 0
+   if(!is.null(elev.circles)) {
+       for(k in 1:length(elev.circles)) {
+           h.axis <- list(x = r * ((elev.circles[k] - height.range[1])/rng) * cos(angs), y = r * ((elev.circles[k] - height.range[1])/rng) * sin(angs)) 
+           lines(h.axis, lty = 2)
+           if(!is.null(elev.labels)) {
+               text(r * sin(text.loc) * ((elev.circles[k] - height.range[1])/rng),  r * cos(text.loc) * ((elev.circles[k] - height.range[1])/rng), elev.labels[k], pos = 3)
+           }
+       }
+   }
+
+   #Radial axes and labels
+   if(!is.null(radial.lines)) {
+       segments(0, 0, r.axis * sin(radial.lines * (pi/180)), r.axis * cos(radial.lines * (pi/180)), lty = 2)
+   }
+ 
+   #Make colorbar
+   if(colorbar) {
+       image(seq(r.axis + tick.len * 4, r.axis + tick.len * 5, length.out = 2),
+           seq(-r.axis, r.axis, length.out = n.cols),
+           array(seq(0, 10, length.out = n.cols),
+           dim = c(1, n.cols)), add = TRUE, col = color.map) 
+       text(rep(r.axis + tick.len * 6, length(colorbar.tick)), colorbar.tick * 2 * (r.axis/max(colorbar.tick)) - r.axis,
+           lab = colorbar.tick)
+
+       if(!is.null(colorbar.label)) {
+           text(r.axis + tick.len * 3, 0, colorbar.label, srt = 90)
+       }
+    }
+}     
+
+ 
+RTModelProfile <- function(model.url, pred, levels, variables, lon, lat, resolution, grid.type, model.domain = NULL, spatial.average = FALSE, verbose = TRUE) {
+   #Get variables and levels for a list of points, utilizing nearest neighbor interpolation if requested
+   #INPUTS
+   #    MODEL.URL - Where the model is located, returned from CrawlModels
+   #    PRED - Which prediction to download
+   #    VARIABLES - Model variables to get for profile
+   #    LEVELS - Model levels to get for profile
+   #    LON - List of longitudes
+   #    LAT - List of latitudes
+   #    RESOLUTION - Resolution of model, in degrees if Lat/Lon, in kilometers if cartesian, as a 2 element vector (ZONAL, MERIDIONAL)
+   #    GRID.TYPE - If the horizontal part of the model is Lat/Lon or cartesian.
+   #       "latlon" if Lat/Lon, "cartesian" if cartesian.
+   #    MODEL.DOMAIN - a vector of latitudes and longitudes that specify the area to return a forecast for
+   #        If NULL, get 1 degree past limits of LON and LAT
+   #    SPATIAL.AVERAGE - Perform nearest neighbor interpolation for 4 grid nodes to get average profile at a specific point.  Default FALSE.  If FALSE, get data from nearest grid node.
+   #OUTPUTS
+   #    PROFILE.DATA - Table of pressures and requested variables
+   #    SPATIAL.AVERAGING - What kind of spatial interpolation was used, if any
+   #    PRED - is the exact model run you want, generally from ParseModelPage
+   #    VARIABLES - Model variables, in the order presented in PROFILE.DATA
+   #    LEVELS - Model levels, in the order presented in PROFILE.DATA
+   #    MODEL.DATE - When the model was run
+   #    DATE - What date was requested for the data
+
+
+
+   if(is.null(model.domain)) {
+       model.domain <- c(min(lon), max(lon), max(lat), min(lat)) + c(-1, 1, 1, -1)
+   }
+
+   if(spatial.average) {
+      spatial.average.method <- "Multilevel B-Splines using MBA::mba.points"
+   } else {
+      spatial.average.method <- "Nearest Node"
+   }
+
+
+   grib.info <- GribGrab(model.url, pred, levels, variables, model.domain = model.domain, verbose = verbose)
+   grib.data <- ReadGrib(file.path(grib.info$local.dir, grib.info$file.name), levels, variables)
+   gridded.data <- ModelGrid(grib.data, resolution, grid.type = grid.type)
+
+   l.i <- sort(as.numeric(unlist(stringr::str_extract_all(gridded.data$levels, "\\d+"))), index.return = TRUE, decreasing = TRUE)
+   profile.data <- NULL
+   for(k in seq_len(length(lat))) {
+       profile.data[[k]] <- BuildProfile(gridded.data, lon[k], lat[k], spatial.average)[l.i$ix,]
+   }
+   profile <- list(profile.data = profile.data, spatial.averaging = spatial.average.method,
+       variables = gridded.data$variables, lat = lat, lon = lon,
+       levels = gridded.data$levels[l.i$ix], model.date = gridded.data$model.run.date, forecast = pred, model.url = model.url,
+       forecast.date = gridded.data$forecast.date)
+   invisible(profile)
+}
+
