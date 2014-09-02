@@ -1,3 +1,36 @@
+GribInfo <- function(grib.file, file.type = "grib2") {
+    #This function returns information about what's contained in a grib file.
+    #INPUTS
+    #    GRIB.FILE - Path and name of file to examine
+    #    FILE.TYPE = Whether it's a grib2 file ("grib2") or a grib file ("grib1")
+    #OUTPUTS
+    #    GRIB.INFO - What the grib file contains
+    #        $INVENTORY - Information on variables, levels, and forecasts
+    #        $GRID - Information on the model grid, only available in grib2 
+ 
+    if(file.type == "grib2") {
+        test <- tryCatch(system('wgrib2', ignore.stdout=TRUE, ignore.stderr = TRUE))
+        if(test != 8) {
+            stop("wgrib2 does not appear to be installed, or it is not on the PATH variable.
+                You can find wgrib2 here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/.
+                If the binaries don't work, try compiling from source.")
+        }
+        inv <- system(paste0("wgrib2 ", grib.file, " -inv -"), intern = TRUE)
+        grid <- system(paste0("wgrib2 ", grib.file, " -grid"), intern = TRUE) 
+    } else if (file.type == "grib1") {
+          test <- tryCatch(system('wgrib', ignore.stdout=TRUE, ignore.stderr = TRUE))
+          if(test != 8) {
+              stop("wgrib does not appear to be installed, or it is not on the PATH variable.
+                  You can find wgrib here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib.html.")
+           }
+        inv <- system(paste0("wgrib ", grib.file), " -s", intern = TRUE)
+        grid <- NULL
+    } else {
+        stop(paste0("Did not recognise file type ", file.type, ".  Please use \"grib2\" or \"grib.\""))
+    }
+    return(list(inventory = inv, grid = grid))
+}
+
 ReadGrib <- function(file.name, levels, variables, file.type = "grib2", missing.data = NULL) {
     #This is a function to read forecast data from a Grib file
     #INPUTS
@@ -22,7 +55,7 @@ ReadGrib <- function(file.name, levels, variables, file.type = "grib2", missing.
         if(test != 8) {
             stop("wgrib2 does not appear to be installed, or it is not on the PATH variable.
                 You can find wgrib2 here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/.
-                In my experience compiling from source (rather than packages or binaries) work best in Ubuntu.")
+                If the binaries don't work, try compiling from source.")
         }
         match.str <- ' -match "('
         for(var in variables) {

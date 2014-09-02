@@ -63,16 +63,17 @@ Daniel C. Bowman \email{daniel.bowman@unc.edu}
 #An example for the Global Forecast System 0.5 degree model
 
 #Get the latest model url
-\dontrun{urls.out <- CrawlModels(abbrev = "gfs_hd", depth = 1)}
+\dontrun{
+urls.out <- CrawlModels(abbrev = "gfs_hd", depth = 1)
 
 #Get a list of forecasts, variables and levels
-\dontrun{model.parameters <- ParseModelPage(urls.out[1])}
+model.parameters <- ParseModelPage(urls.out[1])
 
 #Figure out which one is the 6 hour forecast
 #provided by the latest model run
 #(will be the forecast from 6-12 hours from the current date) 
 
-\dontrun{my.pred <- model.parameters$pred[grep("06$", model.parameters$pred)]}
+my.pred <- model.parameters$pred[grep("06$", model.parameters$pred)]
 
 #What region of the atmosphere to get data for
 levels <- c("2 m above ground", "800 mb")
@@ -81,16 +82,16 @@ levels <- c("2 m above ground", "800 mb")
 variables <- c("TMP", "RH") #Temperature and relative humidity
 
 #Get the data
-\dontrun{model.info <- GribGrab(urls.out[1], my.pred, levels, variables)}
+model.info <- GribGrab(urls.out[1], my.pred, levels, variables)
 
 #Extract the data
-\dontrun{model.data <- ReadGrib(model.info$file.name, levels, variables)}
+model.data <- ReadGrib(model.info$file.name, levels, variables)
 
 #Reformat it
-\dontrun{model.grid <- ModelGrid(model.data, c(0.5, 0.5))}
+model.grid <- ModelGrid(model.data, c(0.5, 0.5))
 
 #Show an image of world temperature at ground level
-\dontrun{image(model.grid$z[2, 1,,])}
+image(model.grid$z[2, 1,,])
 
 
 #Archived Data Extraction
@@ -102,10 +103,11 @@ model.date <- 20040302 #March 2, 2004
 model.run <- 18 #1800 GMT model run
 pred <- 0 #Analysis
 
-\dontrun{grib.info <- ArchiveGribGrab(abbrev, model.date, model.run,
-    pred, file.type = "grib1")}
+grib.info <- ArchiveGribGrab(abbrev, model.date, model.run,
+    pred, file.type = "grib1")
 
-\dontrun{model.data <- ReadGrib(grib.info$file.name, c("1000 mb"), c("TMP"), 
-    file.type = "grib1")}
+model.data <- ReadGrib(grib.info$file.name, c("1000 mb"), c("TMP"), 
+    file.type = "grib1")
+}
 }
 \keyword{ file }

@@ -108,7 +108,7 @@ BuildProfile <- function(gridded.data, lon, lat, spatial.average) {
    return(profile.data)
 }
 
-ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NULL, variables = NULL, model.domain = NULL) {
+ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NULL, variables = NULL, model.domain = NULL, cartesian.nodes = NULL) {
     #Transform model data array into a grid with dimensions levels x variables x lon range x lat range
     #This should reduce the size of the returned data by removing redundant information
     #This will perform interpolation as necessary to fit data to a regular grid - be aware of this!
@@ -119,6 +119,9 @@ ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NUL
     #    LEVELS - levels to include in grid, if NULL, include all of them
     #    MODEL.DOMAIN - vector c(LEFT LON, RIGHT LON, TOP LAT, BOTTOM LAT) of region to include in output. If NULL, include everything.
     #    GRID.TYPE - Whether the grid is in lat/lon or cartesian.  Options "latlon" or "cartesian."
+    #    CARTESIAN.NODES - If GRID.TYPE = cartesian, this is the list of x and y values that define the cartesian grid of the model
+    #        CARTESIAN.NODES$X - East-west values
+    #        CARTESIAN.NODES $Y - North-south values
     #OUTPUTS
     #   FCST.GRID - A list with elements:
     #       $Z An array of dimensions levels x variables x lon x lat; each level x variable contains the model grid of data from that variable and level
@@ -136,9 +139,10 @@ ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NUL
     if(grid.type == "latlon") {
         nodes.xy <- cbind(model.data$lon, model.data$lat)
     } else if(grid.type == "cartesian") {
-        proj <- GEOmap::setPROJ(type =2, LAT0 = median(model.data$lat), LON0 = median(model.data$lon))
-        tmp.xy <- GEOmap::GLOB.XY(model.data$lat, model.data$lon, proj)
-        nodes.xy <- cbind(tmp.xy$x, tmp.xy$y) 
+        if(is.null(cartesian.nodes) | !(("x" %in% names(cartesian.nodes)) & ("y" %in% names(cartesian.nodes)))) {
+           stop("If grid.type = \"cartesian\", you must define the input cartesian.nodes$x=east-west values of your model grid, cartesian.nodes$y=north-south values of your model grid. See ModelGrid documentation.")
+        } 
+        nodes.xy <- cbind(cartesian.nodes$x, cartesian.nodes$y) 
     } else {
         stop(paste0("Did not recognize grid.type ", grid.type, ".  Available options are \"latlon\" and \"cartesian\""))
     }
@@ -222,15 +226,17 @@ MagnitudeAzimuth <- function(zonal.wind, meridional.wind) {
    return(list(magnitude = mag, azimuth = az))
 }
 
-PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range = c(0, 50), 
+PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude = NULL, magnitude.range = c(0, 50), 
     height.range = c(0, 50000), points = TRUE, lines = FALSE,
-    radial.axis = TRUE, elev.circles = NULL, elev.labels = NULL, radial.lines = NULL,
-    colorbar = TRUE, colorbar.label = NULL, north.label = TRUE, invert = FALSE, ...) {
+    radial.axis = TRUE, elev.circles = NULL, elev.labels = NULL, 
+    radial.lines = NULL, colorbar = TRUE, colorbar.label = NULL, north.label = TRUE, invert = FALSE, ...) {
     #Plot a graphical representation of wind speed and direction, with lowest elevations closest to the center and highest elevations towards the edge.
     #INPUTS
     #    ZONAL.WIND - East-west wind speed.  Can be a vector or a list of vectors
     #    MERIDIONAL.WIND - North-South wind speed.  Can be a vector or a list of vectors.
     #    HEIGHT - Height above reference point.  Can be a vector or list of vectors.
+    #    MAGNITUDE - If you want to plot different numeric values along the azimuths specified by ZONAL.WIND and MERIDIONAL.WIND, for example, if you want
+    #       along-wind sound velocity.  Default NULL.
     #    MAGNITUDE.RANGE - Ranges of wind speed to plot, defaults to c(0, 50)
     #    HEIGHT.RANGE - Which heights to plot, defaults to c(0, 50000)
     #    POINTS - Do you want to plot data points as points?  You can use optional parameters to set the type and appearance of these points. Default TRUE.
@@ -250,12 +256,16 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
     #    MAX.AZ - If plotting lines and the difference between two segments is greater than this value, interpolate between them to make things smooth
     #    COLOR.MAP - A list of colors to use, defaults to rainbow(n, 0, 5/6)
     #    N.COLS - Number of color bins in color map
+    #    SUB.COL - Color of internal (elevation and azimuth) axes as a vector of length 2
+    #    SUB.LTY - Type of internal axes, as a vector of length 2
+    #    SUB.LWD - Width of internal axes, as a vector of length 2
+    #    ELEV.LABELS.AZ - Which azimuth to plot elevation labels on. 
     #    POINT.CEX - size of points, if plotted
     #    PCH - Plot character of points, if plotted
     #    LTY - Line style, if lines are selected
     #    LWD - Line thickness, if lines are selected
     #    COLORBAR.TICK - Where to put labels on colorbar
-   
+ 
     opts <- list(...)
     o.n <- names(opts)
     r <- 1
@@ -296,6 +306,30 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
        color.map <- opts$color.map
     }
 
+    if(!"sub.col" %in% o.n) {
+        sub.col <- c("gray50", "gray60")
+    } else {
+       sub.col <- opts$sub.col
+    }
+
+    if(!"sub.lty" %in% o.n) {
+        sub.lty <- c(2, 3)
+    } else {
+       sub.lty <- opts$sub.lty
+    }
+
+    if(!"sub.lwd" %in% o.n) {
+        sub.lwd <- c(1, 1)
+    } else {
+        sub.lwd <- opts$sub.lwd
+    }
+
+    if(!"elev.labels.az" %in% o.n) {
+        elev.labels.az <- 0
+    } else {
+        elev.labels.az <- opts$elev.labels.az
+    }
+
     if(!"point.cex" %in% o.n) {
         point.cex <- 1
     } else {
@@ -319,7 +353,6 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
     } else {
        lwd <- opts$lwd
     }
-
 
     if(!"colorbar.tick" %in% o.n) {
         colorbar.tick <- seq(magnitude.range[1], magnitude.range[2], length.out = 6)
@@ -364,13 +397,24 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
        hgt.ind <- which(height[[k]] >= height.range[1] & height[[k]] <= height.range[2])
        maz <- MagnitudeAzimuth(zonal.wind[[k]][hgt.ind], meridional.wind[[k]][hgt.ind])
        hgt <- height[[k]][hgt.ind] - min(height.range)
+       if(is.null(magnitude)) {
+           mag <- maz$magnitude
+       } else {
+           mag <- magnitude[[k]][hgt.ind]
+       }
+
        if(invert) {
            hgt <- rev(hgt)
        }
        if(points) {
            point.col <- c()
+           if(is.null(magnitude)) {
+               mag <- maz$magnitude
+           } else {
+               mag <- magnitude
+           }
            for(j in 1:length(maz$azimuth)) {
-                point.col <- append(point.col, color.map[which(abs(maz$magnitude[j] - color.scale) == min(abs(maz$magnitude[j] - color.scale)))])
+                point.col <- append(point.col, color.map[which(abs(mag[j] - color.scale) == min(abs(mag[j] - color.scale)))])
            }
            points(r * hgt/rng * sin((pi / 180) * maz$azimuth),
                r * hgt/rng * cos((pi / 180) * maz$azimuth), 
@@ -383,7 +427,7 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
            tmp.az <- c()
            for(j in 1:length(maz$azimuth)) {
                if(abs(azs[j] - azs[j + 1]) < max.az) {
-                   m <- append(m, maz$magnitude[j])
+                   m <- append(m, mag[j])
                    h <- append(h, hgt[j])
                    tmp.az <- append(tmp.az, azs[j])
                } else { #Smooth out large azimuth swings (usually at low wind speeds)
@@ -397,7 +441,7 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
                    } else {
                        tmp.az <-  append(tmp.az, seq(azs[j] + 360, azs[j + 1], length.out = interp.len))
                   }
-                  m <- append(m, seq(maz$magnitude[j], maz$magnitude[j + 1], length.out = interp.len))
+                  m <- append(m, seq(mag[j], mag[j + 1], length.out = interp.len))
                   h <- append(h, seq(hgt[j], hgt[j + 1], length.out = interp.len))
                }
             }
@@ -413,20 +457,20 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
    }
 
    #Altitude axes and labels
-   text.loc <- 0
+   text.loc <- elev.labels.az * (pi/180)
    if(!is.null(elev.circles)) {
        for(k in 1:length(elev.circles)) {
            h.axis <- list(x = r * ((elev.circles[k] - height.range[1])/rng) * cos(angs), y = r * ((elev.circles[k] - height.range[1])/rng) * sin(angs)) 
-           lines(h.axis, lty = 2)
+           lines(h.axis, lty = sub.lty[1], lwd = sub.lwd[1], col = sub.col[1])
            if(!is.null(elev.labels)) {
-               text(r * sin(text.loc) * ((elev.circles[k] - height.range[1])/rng),  r * cos(text.loc) * ((elev.circles[k] - height.range[1])/rng), elev.labels[k], pos = 3)
+               text(r * sin(text.loc) * ((elev.circles[k] - height.range[1])/rng),  r * cos(text.loc) * ((elev.circles[k] - height.range[1])/rng), elev.labels[k], adj = c(0, 0))
            }
        }
    }
 
    #Radial axes and labels
    if(!is.null(radial.lines)) {
-       segments(0, 0, r.axis * sin(radial.lines * (pi/180)), r.axis * cos(radial.lines * (pi/180)), lty = 2)
+       segments(0, 0, r.axis * sin(radial.lines * (pi/180)), r.axis * cos(radial.lines * (pi/180)), lty = sub.lty[2], lwd = sub.lwd[2], col = sub.col[2])
    }
  
    #Make colorbar
@@ -435,8 +479,9 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude.range
            seq(-r.axis, r.axis, length.out = n.cols),
            array(seq(0, 10, length.out = n.cols),
            dim = c(1, n.cols)), add = TRUE, col = color.map) 
-       text(rep(r.axis + tick.len * 6, length(colorbar.tick)), colorbar.tick * 2 * (r.axis/max(colorbar.tick)) - r.axis,
-           lab = colorbar.tick)
+       scaling <- r.axis/(max(colorbar.tick) - min(colorbar.tick))
+       text(rep(r.axis + tick.len * 4, length(colorbar.tick)), (colorbar.tick - min(colorbar.tick)) * 2 * scaling - r.axis,
+           lab = colorbar.tick, pos = 4 )
 
        if(!is.null(colorbar.label)) {
            text(r.axis + tick.len * 3, 0, colorbar.label, srt = 90)

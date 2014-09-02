@@ -35,7 +35,7 @@ Daniel C. Bowman \email{daniel.bowman@unc.edu}
 }
 \note{
 Sometimes, sending lots of HTTP requests in rapid succession can cause errors.
-If messages resembling \code{"Error: failed to load HTTP resource"} appear, try \code{request.sleep = 1}.
+If messages resembling \code{"Error: failed to load HTTP resource"} appear, try increasing \code{request.sleep}.
 The code will take longer to execute but it will be more likely to finish successfully.
 }
 
@@ -48,12 +48,14 @@ The code will take longer to execute but it will be more likely to finish succes
 
 #Get the latest model url and date
 abbrev <- "gfs_hd"
-\dontrun{urls.out <- GetDODSDates(abbrev)}
-\dontrun{print(paste("Most recent model run:",tail(urls.out$date, 1)))}
+\dontrun{
+urls.out <- GetDODSDates(abbrev)
+print(paste("Most recent model run:",tail(urls.out$date, 1)))
 
 #Get model dates from the GFS archive
 abbrev <- "gfs-avn-hi"
-\dontrun{urls.out <- GetDODSDates(abbrev, archive = TRUE, request.sleep = 1)}
+urls.out <- GetDODSDates(abbrev, archive = TRUE, request.sleep = 1)
+}
 
 }
 
