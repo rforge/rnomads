@@ -202,7 +202,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
        t.ind <- grep("^time,", data.txt)
 
        prev.digits <- options("digits")
-       options("digits" = 8)
+       options("digits" = 15)
        num.times <- as.numeric(unlist(strsplit(data.txt[t.ind + 1], split = ",")))
        options("digits" = prev.digits$digits)
        times <- as.POSIXlt(as.Date(num.times - 2, origin = "1-1-1"), tz = "GMT") + 3600 * 24 * (num.times - floor(num.times))
