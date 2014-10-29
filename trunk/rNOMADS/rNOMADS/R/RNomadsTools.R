@@ -152,7 +152,7 @@ ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NUL
         warning("There appears to be more than one model run date in your model grid!")
     }
 
-    fcst.date <- unique(model.data$forecast.date)
+    fcst.date <- as.POSIXlt(unique(model.data$forecast.date), tz = "GMT")
 
     if(length(fcst.date) > 1) {
         warning("There appears to be more than one model run date in your model grid!")

@@ -59,19 +59,19 @@ latest.model.run <- tail(model.runs$model.run, 1)
 time <- c(0,0) #Analysis model
 lon <- c(0, 719) #All 720 longitude points
 lat <- c(0, 360) #All 361 latitude points
+variables <- c("tmp2m", "rh2m")
 
-tmp2m.data <- DODSGrab(latest.model, latest.model.run,
-   "tmp2m", time, lon, lat, display.url = FALSE)
-rh2m.data <- DODSGrab(latest.model, latest.model.run,
-   "rh2m", time, lon, lat, display.url = FALSE)
+ground.data <- DODSGrab(latest.model, latest.model.run,
+   variables, time, lon, lat, display.url = FALSE)
+ground <- ModelGrid(ground.data, c(0.5, 0.5), "latlon")
 
 lev <- c(28,28) #get 300 mb level
-tmp300.data <- DODSGrab(latest.model, latest.model.run,
-   "tmpprs", time, lon, lat, levels = lev, display.url = FALSE)
-ugrd300.data  <- DODSGrab(latest.model, latest.model.run,
-   "ugrdprs", time, lon, lat, levels = lev, display.url = FALSE)
-vgrd300.data  <- DODSGrab(latest.model, latest.model.run,
-   "vgrdprs", time, lon, lat, levels = lev, display.url = FALSE)
+variables <- c("tmpprs", "ugrdprs", "vgrdprs")
+atmos.data <- DODSGrab(latest.model, latest.model.run,
+   variables, time, lon, lat, levels = lev, display.url = FALSE)
+
+atmos <- ModelGrid(atmos.data, c(0.5, 0.5), "latlon")
+
 @
 
 <<>>=
@@ -80,20 +80,20 @@ vgrd300.data  <- DODSGrab(latest.model, latest.model.run,
 
 #Make model grid
 
-atmos <- ModelGrid(tmp2m.data, c(0.5, 0.5), "latlon")
-
 #Set up color scale
 colormap <- rev(rainbow(500, start = 0 , end = 5/6))
 
+ind <- which(ground$variables == "tmp2m")
 #Save image to PNG file
 #Omit this line if you want to display image
 #rather than save to file
 png(file = "fig_ground_temp.png", width = 1000, height = 750)
 
 #Make forecast image
-image(atmos$x, sort(atmos$y), atmos$z[1,1,,], col = colormap,
+image(ground$x, sort(ground$y), ground$z[1,ind,,], col = colormap,
     xlab = "Longitude", ylab = "Latitude",
-    main = paste("World Temperature at Ground Level:", atmos$fcst.date))
+    main = paste("World Temperature at Ground Level:", 
+    ground$fcst.date))
 
 #Plot coastlines
 plotGEOmap(coastmap, border = "black", add = TRUE, 
@@ -108,10 +108,10 @@ dev.off()
 <<>>=
 #FIGURE 2
 #Temperature at 300 mb
-atmos <- ModelGrid(tmp300.data, c(0.5, 0.5), "latlon")
+ind <- which(atmos$variables == "tmpprs")
 colormap <- rev(rainbow(500, start = 0 , end = 5/6))
 png(file = "fig_300mb_temp.png", width = 1000, height = 750)
-image(atmos$x, atmos$y, atmos$z[1,1,,], col = colormap,
+image(atmos$x, atmos$y, atmos$z[1,ind,,], col = colormap,
     xlab = "Longitude", ylab = "Latitude", 
     main = paste("World Temperature at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE, 
@@ -124,12 +124,12 @@ dev.off()
 #Relative humidity at ground level
 
 colormap <- rainbow(500, start = 0 , end = 5/6)
-atmos <- ModelGrid(rh2m.data, c(0.5, 0.5), "latlon")
+ind <- which(ground$variables == "rh2m")
 png(file = "fig_ground_rh.png", width = 1000, height = 750)
-image(atmos$x, atmos$y, atmos$z[1,1,,], col = colormap,
+image(ground$x, ground$y, ground$z[1,ind,,], col = colormap,
     xlab = "Longitude", ylab = "Latitude", 
     main = paste("World Relative Humidity at Ground Level:", 
-    atmos$fcst.date))
+    ground$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
 dev.off()
@@ -138,12 +138,12 @@ dev.off()
 <<>>=
 #FIGURE 4
 #Winds at 300 mb (around jet stream level)
-atmos.ew <- ModelGrid(ugrd300.data, c(0.5, 0.5), "latlon")
-atmos.ns <- ModelGrid(vgrd300.data, c(0.5, 0.5), "latlon")
-winds.vel <- sqrt(atmos.ew$z[1,1,,]^2 + atmos.ns$z[1,1,,]^2)
+ew.ind <- which(atmos$variables == "ugrdprs")
+ns.ind <- which(atmos$variables == "vgrdprs")
+winds.vel <- sqrt(atmos$z[1,ew.ind,,]^2 + atmos$z[1,ns.ind,,]^2)
 colormap <- rainbow(500, start = 0 , end = 5/6)
 png(file = "fig_300mb_winds.png", width = 1000, height = 750)
-image(atmos.ew$x, atmos.ew$y, winds.vel, col = colormap,
+image(atmos$x, atmos$y, winds.vel, col = colormap,
     xlab = "Longitude", ylab = "Latitude", 
     main = paste("World Wind Velocity at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
@@ -155,25 +155,24 @@ dev.off()
 #Get model data
 #and plot 10 m wind speed for 6 hr forecast
 
+variables <- c("ugrd10m", "vgrd10m")
 time <- c(2,2) #6 hr forecast
 
-u10.data <- DODSGrab(latest.model, latest.model.run,
-   "ugrd10m", time, lon, lat, display.url = FALSE)
-v10.data <-DODSGrab(latest.model, latest.model.run,
-   "vgrd10m", time, lon, lat, display.url = FALSE)
+ground.wind.data <- DODSGrab(latest.model, latest.model.run,
+   variables, time, lon, lat, display.url = FALSE)
  
 #Make an array for quick indexing
-atmos.u10 <- ModelGrid(u10.data, c(0.5, 0.5))
-atmos.v10 <- ModelGrid(v10.data, c(0.5, 0.5))
+ground.wind <- ModelGrid(ground.wind.data, c(0.5, 0.5))
 
 #Wind magnitude
-winds.vel <- sqrt(atmos.u10$z[1,1,,]^2 + atmos.v10$z[1,1,,]^2)
+winds.vel <- sqrt(ground.wind$z[1,1,,]^2 + ground.wind$z[1,2,,]^2)
 
 #FIGURE 5
 png(file = "fig_ground_gust.png", width = 1000, height = 750)
-image(atmos$x, atmos$y, winds.vel, col = colormap,
+image(ground.wind$x, ground.wind$y, winds.vel, col = colormap,
     xlab = "Longitude", ylab = "Latitude",
-    main = paste("World Wind Speed at 10 m above ground:", atmos$fcst.date))
+    main = paste("World Wind Speed at 10 m above ground:", 
+    ground.wind$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
 dev.off()
@@ -241,7 +240,7 @@ The tropopause is clearly visible in the temperature profile (Figure \ref{fig:te
 Wind speeds can be surprisingly high at times (Figure \ref{fig:wind_profile}).
 We then show a quick calculation of sound velocity versus height (Figure \ref{fig:c_profile}) using the formula:
 \begin{equation}
-c = 331.3 \sqrt{1 + \frac{T}{273.15}}
+c = 331.3 \sqrt{1 + \frac{T}{272.15}}
 \end{equation}
 where $c$ is the speed of sound in dry air and $T$ is the temperature in degrees Celsius.
 This does not take into account wind speed (a significant omission!).
@@ -282,29 +281,13 @@ latest.model.run <- tail(model.runs$model.run, 1)
 
 time <- c(0,0) #Analysis model
 lev <- c(0, 46) #All levels in atmosphere
-
+variables <- c("tmpprs", "hgtprs", "ugrdprs", "vgrdprs")
 #Temperature
-tmp.data <- DODSGrab(latest.model, latest.model.run,
-   "tmpprs", time, rep(model.lon.ind, 2), rep(model.lat.ind, 2), 
+model.data <- DODSGrab(latest.model, latest.model.run,
+   variables, time, rep(model.lon.ind, 2), rep(model.lat.ind, 2), 
     levels = lev, display.url = FALSE)
 
-#Geopotential height
-hgt.data <- DODSGrab(latest.model, latest.model.run,
-   "hgtprs", time, rep(model.lon.ind, 2), rep(model.lat.ind, 2), 
-    levels = lev, display.url = FALSE)
-
-#E-W wind
-ugrd.data <- DODSGrab(latest.model, latest.model.run,
-   "ugrdprs", time, rep(model.lon.ind, 2), rep(model.lat.ind, 2), 
-    levels = lev, display.url = FALSE)
-
-#N-S wind
-vgrd.data <- DODSGrab(latest.model, latest.model.run,
-   "vgrdprs", time, rep(model.lon.ind, 2), rep(model.lat.ind, 2),  
-    levels = lev, display.url = FALSE)
-
-
-hgt <- hgt.data$value
+hgt <- model.data$value[which(model.data$variable == "hgtprs")]
 
 @
 
@@ -313,7 +296,7 @@ hgt <- hgt.data$value
 #FIGURE 6 - temperature
 
 
-tmp <- tmp.data$value - 273.15
+tmp <- model.data$value[which(model.data$variable == "tmpprs")] - 272.15
 
 #Let's make a spline
 
@@ -339,8 +322,8 @@ dev.off()
 
 #FIGURE 7 - Wind Speed
 
-wu <- ugrd.data$value
-wv <- vgrd.data$value
+wu <- model.data$value[which(model.data$variable == "ugrdprs")]
+wv <- model.data$value[which(model.data$variable == "vgrdprs")]
 wvel <- sqrt(wu^2 + wv^2) 
 
 #Convert to km/hr
@@ -379,8 +362,8 @@ tmp.spline <- splinefun(hgt, tmp, method = "natural")
 synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
 synth.tmp <- tmp.spline(synth.hgt)
 
-c <- 331.5 * sqrt(1 + tmp / 273.15)
-synth.c <- 331.5 * sqrt(1 + synth.tmp / 273.15)
+c <- 331.5 * sqrt(1 + tmp / 272.15)
+synth.c <- 331.5 * sqrt(1 + synth.tmp / 272.15)
 
 png(file = "fig_sound_profile.png", width = 500, height = 500)
 
@@ -400,10 +383,10 @@ dev.off()
 #FIGURE 8
 #ATMOSPHERIC DENSITY (ASSUMING DRY AIR)
 
-p <- ugrd.data$levels * 100
+p <- unique(model.data$levels) * 100
 R <- 287.058 #Specific gas constant, J/(kg * K)
 
-rho <- p / ((tmp + 273.15) * R) #Air density
+rho <- p / ((tmp + 272.15) * R) #Air density
 
 rho.spline <- splinefun(hgt, rho, method = "natural")
 synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
