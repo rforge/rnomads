@@ -1,5 +1,87 @@
 #Functions for doing specific useful tasks with rNOMADS
 
+CheckForModelListUpdates <- function(verbose = TRUE) {
+   #Compare the models available in rNOMADS and the models on the NOMADS server.
+   #If there's a mismatch, alert the user.
+   #I use this to determine when to release a new version.
+   #INPUTS
+   #    VERBOSE - If TRUE, print results
+   #OUTPUTS
+   #    MODEL.LIST.CHECK A list of links that do not match between NOMADS and rNOMADS.
+   #        $RNOMADS.NCEP.DIFF - List of links in rNOMADS but not on real time server
+   #        $NCEP.RNOMADS.DIFF - List of links on real time server but not in rNOMADS
+   #        $RNOMADS.NCDC.DIFF - List of links in rNOMADS but not on archive server
+   #        $NCDC.RNOMADS.DIFF - List of links on archive server but not in rNOMADS
+
+   #Initialize list
+   model.list.check <- list(rnomads.ncep.diff = NULL, ncep.rnomads.diff = NULL, rnomads.ncdc.diff = NULL, ncdc.rnomads.diff = NULL)
+
+   #Check NCEP for real time model links
+   url <- "http://nomads.ncep.noaa.gov/"
+   doc <- XML::htmlParse(url)
+   links <- XML::xpathSApply(doc, "//a/@href")
+   names(links) <- NULL
+   XML::free(doc)
+
+   #Extract real time grib links
+   rt.grib <- links[grepl("filter_.*pl$", links)]
+   rt.grib <- stringr::str_replace(rt.grib, "cgi-bin/filter_", "")
+   rt.grib <- stringr::str_replace(rt.grib, ".pl", "")
+ 
+   #Extract real time dods list
+   rt.dods <- unique(basename(links[grepl("dods", links)]))
+   
+   #Check NCDC for archived model links
+   url <- "http://nomads.ncdc.noaa.gov/data.php?name=access"
+   doc <- XML::htmlParse(url)
+   links <- XML::xpathSApply(doc, "//a/@href")
+   names(links) <- NULL
+   XML::free(doc)
+
+   #Extract archived grib list
+   ar.grib <- unique(basename(links[grepl("^\\/data\\/", links)]))
+
+   #Extract archived dods list
+   ar.dods <- unique(basename(links[grepl("dods", links)])) 
+
+   #Set up output
+   model.list.check$rnomads.ncep.diff <- list(
+       grib = setdiff(NOMADSRealTimeList("grib")$abbrev, rt.grib),
+       dods = setdiff(NOMADSRealTimeList("dods")$abbrev, rt.dods))
+
+   model.list.check$ncep.rnomads.diff <- list(
+       grib = setdiff(rt.grib, NOMADSRealTimeList("grib")$abbrev),
+       dods = setdiff(rt.dods, NOMADSRealTimeList("dods")$abbrev))
+
+   model.list.check$rnomads.ncdc.diff <- list(
+       grib = setdiff(NOMADSArchiveList("grib")$abbrev, ar.grib),
+       dods = setdiff(basename(NOMADSArchiveList("dods")$url), ar.dods))
+
+   model.list.check$ncdc.rnomads.diff <- list(
+       grib = setdiff(ar.grib, NOMADSArchiveList("grib")$abbrev),
+       dods = setdiff(ar.dods, basename(NOMADSArchiveList("dods")$url)))
+
+   if(verbose) {
+      cat("\nModels in rNOMADS but not on the real time server:\n")
+      cat(paste0("GRIB: ", paste(model.list.check$rnomads.ncep.diff$grib, collapse = " "), "\n"))
+      cat(paste0("DODS: ", paste(model.list.check$rnomads.ncep.diff$dods, collapse = " "), "\n"))
+      cat("\n")
+      cat("Models on real time server but not in rNOMADS:\n")
+      cat(paste0("GRIB: ", paste(model.list.check$ncep.rnomads.diff$grib, collapse = " "), "\n"))
+      cat(paste0("DODS: ", paste(model.list.check$ncep.rnomads.diff$dods, collapse = " "), "\n"))
+      cat("\n")
+      cat("Models in rNOMADS but not on the archive server:\n")
+      cat(paste0("GRIB: ", paste(model.list.check$rnomads.ncdc.diff$grib, collapse = " "), "\n"))
+      cat(paste0("DODS: ", paste(model.list.check$rnomads.ncdc.diff$dods, collapse = " "), "\n"))
+      cat("\n")
+      cat("Models on archive server but not in rNOMADS:\n")
+      cat(paste0("GRIB: ", paste(model.list.check$ncdc.rnomads.diff$grib, collapse = " "), "\n"))
+      cat(paste0("DODS: ", paste(model.list.check$ncdc.rnomads.diff$dods, collapse = " "), "\n\n"))
+   }
+
+   invisible(model.list.check)
+
+}
 GetClosestGFSForecasts <- function(forecast.date, model.date = "latest", depth = NULL, verbose = TRUE) {
  #Figure out the closest GFS forecasts to a given date, returns both the closest forecast behind and the closest forecast ahead, as well as how far beind and how far ahead
    #INPUTS
