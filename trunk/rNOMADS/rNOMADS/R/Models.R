@@ -1,4 +1,58 @@
 #Descriptions of real time and archived models
+NRTL2 <- function(url.type, abbrev = NULL) {
+    #Returns a list of model abbreviations for real time models, a short description, and URL for each model offered by the NOMADS server
+    #If a specific model abbreviation is requested, the abbreviation is checked against the model list.
+    #If a match is found, information is returned about that model; otherwise an error occurs
+    #INPUTS
+    #    URL.TYPE determines which URL to return: one for downloading GRIB files (grib) or one for downloading dods data via DODS (dods)
+    #    ABBREV is the model abbreviation that rNOMADS uses to figure out which model you want.
+    #        if NULL, returns information on all models
+    #OUTPUTS
+    #    MODEL.LIST - a list of model metadata with elements
+    #        $ABBREV - the abbrevation used to call the model in rNOMADS
+    #        $NAME - the name of the model
+    #        $URL - the location of the model on the NOMADS website
+
+    if (!(url.type %in% c("grib", "dods"))) {
+        stop("URL type must be either \"grib\" or \"dods\"!")
+    }
+
+   #Check NCEP for real time model links
+   url <- "http://nomads.ncep.noaa.gov/"
+   doc <- XML::htmlParse(url)
+   links <- XML::xpathSApply(doc, "//a/@href")
+   names(links) <- NULL
+   XML::free(doc)
+
+   #Extract real time grib links
+   rt.grib <- links[grepl("filter_.*pl$", links)]
+   rt.grib.abbrev <- stringr::str_replace(rt.grib, "cgi-bin/filter_", "")
+   rt.grib.abbrev <- stringr::str_replace(rt.grib.abbrev, ".pl", "")
+
+   #Extract real time dods list
+   rt.dods <- links[grepl("dods", links)]
+   rt.dods.abbrev <- basename(rt.dods)
+
+   #Now synchronize grib and dods list with the table on NCEP website
+
+   ncep.tables = readHTMLTable(url, header=TRUE)
+
+   #Find the list of real time models
+   for(ncep.table in ncep.tables) {
+      if("grib filter" %in% names(ncep.table) & "gds-alt" %in% names(ncep.table)) {
+         rt.tbl <- ncep.table
+      }
+   }
+
+   rt.tbl <- rt.tbl[-which(is.na(rt.tbl[["grib filter"]])),]
+
+   if(url.type == "grib") {
+       grib.models <- which(!is.na(rt.tbl[["grib filter"]]) & rt.tbl[["grib filter"]]  != "-")
+       names <- rt.tbl[["Data Set"]][grib.models]
+       abbrevs <- rt.grib.abbrev
+       urls <- rt.grib
+   }
+
 NOMADSRealTimeList <- function(url.type, abbrev = NULL) {
     #Returns a list of model abbreviations for real time models, a short description, and URL for each model offered by the NOMADS server
     #If a specific model abbreviation is requested, the abbreviation is checked against the model list.
@@ -74,7 +128,10 @@ abbrevs <- c(
     "estofs",
     "cmcens",
     "fens",
-    "ncom")
+    "ncom",
+    "gfs_0p25",
+    "gfs_0p50",
+    "gfs_1p00")
 
     names <- c(
     "Final Operational Global Forecast System ",
@@ -133,7 +190,10 @@ abbrevs <- c(
     "Extratropical Surge and Tide Operational Forecast System",
     "Canadian Meterological Center Global Ensemble",
     "Fleet Numerical Meteorology and Oceanography Ensemble Forecast System",
-    "U.S. Navy Operational Global Ocean Model") 
+    "U.S. Navy Operational Global Ocean Model",
+    "Global Forecast System 0.25 Degree Resolution, Parallel Model",
+    "Global Forecast System 0.50 Degree Resolution, Parallel Model",
+    "Global Forecast System 1 Degree Resolution, Parallel Model") 
 
 
     if(!is.null(abbrev)) {
