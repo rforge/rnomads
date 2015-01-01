@@ -13,11 +13,11 @@
 \section{Motivation}
 
 I designed the rNOMADS package to provide a quick and easy interface to the NOAA Operational Model Archive and Distribution System.
-It can retrieve data in ascii format (this works for all operating systems) or in a binary format called GRIB (this works for Linux only at this time).
-This document describes downloading, reading, and displaying ascii data.
+It can retrieve data in ascii format (this works for all operating systems) or in a binary format called grib.
+This document describes downloading, reading, and displaying ascii data using the GrADS-DODS interface.
 Please refer to the \href{http://www.unc.edu/\%7Ehaksaeng/rNOMADS/rNOMADS_grib_examples.pdf}{companion document} for information on downloading and processing data in GRIB format.
 
-The rNOMADS package provides online access to 55 weather, ocean, and sea ice models.
+The rNOMADS package provides online access to 55 weather, ocean, and sea ice models via the GrADS-DODS.
 This vignette shows how to download data from the Global Forecast System 0.5 x 0.5 degree model.
 This model describes the state of the atmosphere across the entire planet in 0.5 by 0.5 degree cells.
 

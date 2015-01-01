@@ -4,7 +4,7 @@
 \usepackage{hyperref}
 \begin{document}
 \setkeys{Gin}{width=\textwidth}
-\title{Downloading and Analyzing Weather Forecast Data with rNOMADS using GRIB}
+\title{Downloading and Analyzing Weather Forecast Data with rNOMADS using grib}
 \author{Daniel Bowman}
 \date{\today}
 \maketitle
@@ -13,15 +13,16 @@
 \section{Motivation}
 
 I designed the rNOMADS package to provide a quick and easy interface to the NOAA Operational Model Archive and Distribution System.
-It can retrieve data in ascii format (this works for all operating systems) or in a binary format called GRIB (this works for Linux only at this time).
-This document describes downloading, reading, and displaying data in GRIB format.
+It can retrieve data in ascii format (this works for all operating systems) or in a binary format called grib.
+This document describes downloading, reading, and displaying data in grib format.
 Please refer to the \href{http://www.unc.edu/\%7Ehaksaeng/rNOMADS/rNOMADS_dods_examples.pdf}{companion document} for information on ascii data download via GrADS-DODS.
 
-The GRIB portion of the rNOMADS package consists of two parts: a downloader that gathers data from the NOMADS website, and a reader that loads the model data into R.
+The grib portion of the rNOMADS package consists of two parts: a downloader that gathers data from the NOMADS website, and a reader that loads the model data into R.
 The reader requires the user to install \textbf{wgrib2}.
-wgrib2 is a set of routines for processing GRIB files and can be downloaded \href{http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/}{here}.
+wgrib2 is a set of routines for processing grib files and can be downloaded \href{http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/}{here}.
+It is simple to compile and install on Linux systems, and users have gotten it to work on Mac OS and Windows as well.
 
-The rNOMADS package provides access to GRIB file for 54 models.
+The rNOMADS package provides access to grib files for 58 models.
 This vignette shows how to download data from the Global Forecast System 0.5 x 0.5 degree model.
 This model describes the state of the atmosphere across the entire planet in 0.5 by 0.5 degree cells.
 The model divides the atmosphere into 64 layers.
