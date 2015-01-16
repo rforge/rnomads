@@ -57,7 +57,7 @@ library(rNOMADS)
 library(fields)
 
 #Get the latest 2 model instances
-urls.out <- CrawlModels(abbrev = "gfs_hd", 
+urls.out <- CrawlModels(abbrev = "gfs_0p50", 
     depth = 2, verbose = FALSE)
 
 #Get the available predictions.
@@ -176,7 +176,7 @@ levels <- c("surface")
 resolution <- c(0.5, 0.5)
 
 #Get the latest 2 model instances
-urls.out <- CrawlModels(abbrev = "gfs_hd",
+urls.out <- CrawlModels(abbrev = "gfs_0p50",
     depth = 2, verbose = FALSE)
 
 #Get the available predictions.
@@ -293,7 +293,7 @@ where $\rho$ is density, $p$ is pressure, $R_{specific}$ is the specific gas con
 library(rNOMADS)
 
 #Get the latest 2 model instances
-urls.out <- CrawlModels(abbrev = "gfs_hd",
+urls.out <- CrawlModels(abbrev = "gfs_0p50",
     depth = 2, verbose = FALSE)
 resolution <- c(0.5, 0.5)
 grid.type <- "latlon"

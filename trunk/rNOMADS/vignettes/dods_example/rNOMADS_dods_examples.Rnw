@@ -49,7 +49,7 @@ library(fields)
 
 #Get latest GFS model
 
-model.urls <- GetDODSDates("gfs_hd")
+model.urls <- GetDODSDates("gfs_0p50")
 latest.model <- tail(model.urls$url, 1)
 model.runs <- GetDODSModelRuns(latest.model)
 latest.model.run <- tail(model.runs$model.run, 1)
@@ -272,7 +272,7 @@ lat.diff <- abs(lat - lats)
 model.lon.ind <- which(lon.diff == min(lon.diff)) - 1
 model.lat.ind <- which(lat.diff == min(lat.diff)) - 1
 
-model.urls <- GetDODSDates("gfs_hd")
+model.urls <- GetDODSDates("gfs_0p50")
 latest.model <- tail(model.urls$url, 1)
 model.runs <- GetDODSModelRuns(latest.model)
 latest.model.run <- tail(model.runs$model.run, 1)
