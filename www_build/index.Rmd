@@ -1,0 +1,10 @@
+# An R Interface to the NOAA Operational Model Archive and Distribution System
+### Daniel C. Bowman
+### rnomads-user@lists.r-forge.r-project.org
+
+### Problem 1
+Read in and plot GPS data.
+
+```{r}
+print("Hello world!")
+```
