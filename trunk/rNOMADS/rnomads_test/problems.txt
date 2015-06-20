@@ -1,0 +1,1 @@
+1.  BuildProfile throws segfault when spatial.average = TRUE

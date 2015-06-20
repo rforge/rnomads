@@ -102,7 +102,7 @@ BuildProfile <- function(gridded.data, lon, lat, spatial.average) {
         }
      } else { #Nearest grid node
          cart.dist <- sqrt(cart.pts$x^2 + cart.pts$y^2)
-         node.ind <- which(cart.dist[nrow(cart.dist):1,] == min(cart.dist), arr.ind = TRUE)
+         node.ind <- rev(which(cart.dist[nrow(cart.dist):1,] == min(cart.dist), arr.ind = TRUE))
          profile.data <- gridded.data$z[,,node.ind[1], node.ind[2]]
          spatial.average.method <- "Nearest Node"
 

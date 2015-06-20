@@ -1,3 +1,5 @@
 1.  Adam Simkowski points out that BuildProfile does not work with the spatial interpolation function for the HRRR model. 
 It looks like MBA:mba.points fails for non-rectangular grids.
 Need to fix this.
+
+Now spatial interpolation throws a segfault, not sure why
