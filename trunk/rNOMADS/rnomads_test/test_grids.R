@@ -21,7 +21,7 @@ lats <- list(
 lons <- list(
     c(0, 719),
     c(10, 700), #Subset of GFS 0.50
-    c(0, 1440), 
+    c(0, 1439), 
     c(344, 482)) #Adam's subset of HRRR
 
 variables <- list(
@@ -69,7 +69,7 @@ for(k in 1:length(models)) {
         
         
     for(i in 1:2) { 
-        out.file <- paste0(models[k], "_", sprintf("%03i", i), ".txt")
+        out.file <- paste0(sprintf("%02i", k), models[k], "_", sprintf("%03i", i), ".txt")
         write(paste("MODEL", models[k], "TRIAL", i), file = out.file)
         write(paste("LATS", lat), file = out.file, append = TRUE)
         write(paste("LONS", lon), file = out.file, append = TRUE)
@@ -110,7 +110,7 @@ for(k in 1:length(models)) {
         
         profile <- BuildProfile(atmos, test.lon, test.lat, spatial.average = FALSE)
         write(paste("Profile", all(profile > 10)), file = out.file, append = TRUE)
-        save(dods.data, test.data, atmos, profile, file = paste0(models[k], "_", sprintf("%03i", i), ".RData"))
+        save(dods.data, test.data, atmos, profile, file = paste0(sprintf("%02i", k), "_", models[k], "_", sprintf("%03i", i), ".RData"))
         print(paste("Model", models[k], "Trial", i, "complete"))
     } 
 }
