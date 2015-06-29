@@ -40,7 +40,6 @@ resolutions <- list(
     c(0.5, 0.5),
     c(0.5, 0.5),
     c(0.25, 0.25),
-    c(0.25, 0.25),
     c(0.029, 0.027))
 
 #First test GFS 0.5 x 0.5 (rectangular grid, square node spacing)
@@ -98,7 +97,7 @@ for(k in 1:length(models)) {
         
         #Test ModelGrid
          
-        atmos <- ModelGrid(test.data, c(0.5, 0.5))
+        atmos <- ModelGrid(test.data, resolutions[[k]])
         
         for(l in 1:dim(atmos$z)[1]) {
            for(m in 1:dim(atmos$z)[2]) {
