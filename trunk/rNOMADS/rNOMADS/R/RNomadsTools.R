@@ -141,13 +141,13 @@ ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NUL
     if(grid.type == "latlon") {
 
         #Check to make sure the grid is not too fine
-        data.lat <- diff(model.data$lat)
-        data.lon <- diff(model.data$lon)
+        data.lat <- round(diff(model.data$lat), 11)
+        data.lon <- round(diff(model.data$lon), 11)
         if(median(data.lon[data.lon != 0]) > resolution[1]) {
-             warning(paste("The resolution you've chosen appears to be greater than the resolution of the model.  You chose", resolution[1], "but the model longitude list suggests that", median(data.lon[data.lon != 0]), "is the actual resolution."))
+             warning(paste("The resolution you've chosen appears to be finer than the resolution of the model.  You chose", resolution[1], "but the model longitude list suggests that", median(data.lon[data.lon != 0]), "is the actual resolution.  This could cause unexpected behavior."))
         } 
         if(median(data.lat[data.lat != 0]) > resolution[2]) {
-             warning(paste("The resolution you've chosen appears to be greater than the resolution of the model.  You chose", resolution[2], "but the model latitude list suggests that", median(data.lat[data.lat != 0]), "is the actual resolution."))
+             warning(paste("The resolution you've chosen appears to be greater than the resolution of the model.  You chose", resolution[2], "but the model latitude list suggests that", median(data.lat[data.lat != 0]), "is the actual resolution.  This could cause unexpected behavior."))
         } 
         nodes.xy <- cbind(model.data$lon, model.data$lat)
     } else if(grid.type == "cartesian") {
