@@ -27,7 +27,7 @@ NOMADSRealTimeList <- function(url.type, abbrev = NULL) {
     trim <- function(x) gsub("^[[:space:]]+|[[:space:]]+$", "", x)
 
     # neither rvest::html nor rvest::html_session liked it, hence using XML::htmlParse
-    doc <- XML::htmlParse(base.url)
+    doc <- xml2::read_html(base.url)
 
     ds <- doc %>% html_nodes(xpath="//table/descendant::th[@class='nomads'][1]/../../
                                             descendant::td[contains(., 'http')]/
@@ -36,10 +36,12 @@ NOMADSRealTimeList <- function(url.type, abbrev = NULL) {
 
 #    html_text() %>% trim()
 
+    #THIS WORKS!
+
     grib.filter <- doc %>% html_nodes(xpath="//table/descendant::th[@class='nomads'][1]/../../
                                   descendant::td[contains(., 'http')]/preceding-sibling::td[1]") %>%
    sapply(function(x) {
-     ifelse(x %>% xpathApply("boolean(./a)"),
+     ifelse(grepl("href", as.character(x)),
            x %>% html_node("a") %>% html_attr("href"),
            NA)
     })
@@ -49,7 +51,7 @@ NOMADSRealTimeList <- function(url.type, abbrev = NULL) {
    gds.alt <- doc %>% html_nodes(xpath="//table/descendant::th[@class='nomads'][1]/../../
                               descendant::td[contains(., 'http')]/following-sibling::td[1]") %>%
    sapply(function(x) {
-    ifelse(x %>% xpathApply("boolean(./a)"),
+    ifelse(x %>% XML::xpathApply("boolean(./a)"),
            x %>% html_node("a") %>% html_attr("href"),
            NA)
    })
