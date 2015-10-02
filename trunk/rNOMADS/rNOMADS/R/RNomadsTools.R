@@ -238,6 +238,19 @@ MagnitudeAzimuth <- function(zonal.wind, meridional.wind) {
    return(list(magnitude = mag, azimuth = az))
 }
 
+LinkExtractor <- function(url) {
+    #Extracts links from a web page
+    #INPUTS
+    #    URL - Address of web page
+    #OUTPUTS
+    #    LINKS - A list of all the links on the page
+
+    html.tmp <- xml2::read_html(url)
+    links <-  html.tmp %>% html_nodes("a") %>% html_attr("href")
+
+    return(links)
+}
+
 PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude = NULL, magnitude.range = c(0, 50), 
     height.range = c(0, 50000), points = TRUE, lines = FALSE,
     radial.axis = TRUE, elev.circles = NULL, elev.labels = NULL, 
