@@ -75,39 +75,58 @@ GetClosestForecasts <- function(abbrev, forecast.date, model.date = "latest", de
    return(list(model.url = url.to.use, model.run.date = nice.run.date, back.forecast = back.forecast, fore.forecast = fore.forecast, back.hr = back.hr, fore.hr = fore.hr))
 }
 
-BuildProfile <- function(gridded.data, lon, lat, spatial.average) {
+BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points = 4) {
     #This function builds an atmospheric profile, performing spatial interpolation if requested
     #INPUTS
-    #    GRIDDED.DATA - Data structure returned by ModelGrid
+    #    MODEL.DATA - Data structure returned from ReadGrib or DODSGrab
     #    LON - Longitude of point of interest
     #    LAT - Latitude of point of interest
     #    SPATIAL.AVERAGE - Boolean determining whether to get nearest node value (FALSE) or interpolate using b-splines (TRUE)
+    #    POINTS - If SPATIAL.AVERAGE = TRUE, use this many points proximal to the point of interest to interpolate
     #OUTPUTS
     #    PROFILE.DATA - A levels x variables matrix with atmospheric data for given point
-    
-    profile.data <- array(rep(0, length(gridded.data$variables) * length(gridded.data$levels)),
-        dim = c(length(gridded.data$levels), length(gridded.data$variables)))
-    #Project to Cartesian grid
-    lons <- t(array(rep(gridded.data$x, length(gridded.data$y)), dim = dim(gridded.data$z)[3:4]))
-    lats <- array(rep(rev(gridded.data$y), length(gridded.data$x)), dim = rev(dim(gridded.data$z)[3:4]))
-    #lats <- array(rep(gridded.data$y, length(gridded.data$x)), dim = dim(gridded.data$z)[3:4])
-    proj <- GEOmap::setPROJ(type = 2, LAT0 = lat, LON0 = lon)
-    cart.pts <- GEOmap::GLOB.XY(lats, lons, proj)
-    if(spatial.average) {  #Average of 4 nearest points
-        for(k in seq_len(length(gridded.data$levels))) {
-            for(j in seq_len(length(gridded.data$variables))) {
-                layer.img <- t(rbind(as.vector(cart.pts$x), as.vector(cart.pts$y[nrow(cart.pts$y):1,]), as.vector(t(gridded.data$z[k,j,,]))))
+   
+    variables <- unique(model.data$variables)
+    levels    <- unique(model.data$levels)
+ 
+    profile.data <- array(NA,
+        dim = c(length(levels), length(variables)))
+
+    #Calculate distance from point of interest to each point on grid
+    ll.all <- paste(model.data$lat, model.data$lon)
+    ll.u  <- unique(ll.all)
+    ll.tmp <- as.numeric(unlist(strsplit(ll.u, " ")))
+    ll.arr <- t(array(ll.tmp, dim = c(2, length(ll.tmp)/2)))[, 2:1]
+    dist <- fields::rdist.earth(ll.arr, cbind(lon, lat))
+
+    if(spatial.average) {  
+        s.i <- sort(dist, index = TRUE)$ix[1:points]
+        sa.tmp <- as.numeric(unlist(strsplit(ll.u[s.i], " ")))
+        sa.arr <- t(array(sa.tmp, dim = c(2, length(sa.tmp)/2)))[, 2:1]
+        proj <- GEOmap::setPROJ(type = 2, LAT0 = lat, LON0 = lon)
+        cart.pts <- GEOmap::GLOB.XY(sa.arr[, 2], sa.arr[, 1], proj)
+
+        for(k in seq_len(length(levels))) {
+            for(j in seq_len(length(variables))) {
+                vl.i   <- which(model.data$levels == levels[k] & model.data$variables == variables[j])
+                ll.vl  <- ll.all[vl.i]
+                val.vl <- model.data$value[vl.i]
+                d.i <- match(ll.u[s.i], ll.vl)             
+                layer.img <- cbind(cart.pts$x, cart.pts$y, val.vl[d.i])
                 profile.data[k, j] <- MBA::mba.points(layer.img, cbind(0, 0))[[1]][3]
             }
         }
      } else { #Nearest grid node
-         cart.dist <- sqrt(cart.pts$x^2 + cart.pts$y^2)
-         node.ind <- rev(which(cart.dist[nrow(cart.dist):1,] == min(cart.dist), arr.ind = TRUE))
-         profile.data <- gridded.data$z[,,node.ind[1], node.ind[2]]
-         spatial.average.method <- "Nearest Node"
-
+         d.i  <- which(ll.all == ll.u[which(dist == min(dist))])
+         var.tmp <- model.data$variables[d.i]
+         lev.tmp <- model.data$levels[d.i]
+         val.tmp <- model.data$value[d.i]
+         for(k in 1:length(variables)) {
+             v.i <- which(var.tmp == variables[k])
+             profile.data[match(lev.tmp[v.i], levels), k]  <- val.tmp[v.i]
+         }
      }
-   return(profile.data)
+   return(as.numeric(profile.data))
 }
 
 ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NULL, variables = NULL, model.domain = NULL, cartesian.nodes = NULL) {
