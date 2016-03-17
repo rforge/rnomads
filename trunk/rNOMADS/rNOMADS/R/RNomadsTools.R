@@ -79,26 +79,34 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
     #This function builds an atmospheric profile, performing spatial interpolation if requested
     #INPUTS
     #    MODEL.DATA - Data structure returned from ReadGrib or DODSGrab
-    #    LON - Longitude of point of interest
-    #    LAT - Latitude of point of interest
+    #    LON - Longitude of points of interest
+    #    LAT - Latitude of points of interest
     #    SPATIAL.AVERAGE - Boolean determining whether to get nearest node value (FALSE) or interpolate using b-splines (TRUE)
     #    POINTS - If SPATIAL.AVERAGE = TRUE, use this many points proximal to the point of interest to interpolate
     #OUTPUTS
-    #    PROFILE.DATA - A levels x variables matrix with atmospheric data for given point
-   
+    #    PROFILE-A list with as many elements as there are points to draw profiles for
+    #       $PROFILE.DATA - A date x levels x variables matrix with atmospheric data for given point
+    #       $LOCATION - A two element vector the lat/lon coordinates of the locations
+    #       $FORECAST.DATE - Date and time of forecast
+ 
+    profile   <- NULL
+ 
     variables <- unique(model.data$variables)
     levels    <- unique(model.data$levels)
- 
-    profile.data <- array(NA,
-        dim = c(length(levels), length(variables)))
+    times     <- unique(model.data$forecast.date)
 
     #Calculate distance from point of interest to each point on grid
     ll.all <- paste(model.data$lat, model.data$lon)
     ll.u  <- unique(ll.all)
     ll.tmp <- as.numeric(unlist(strsplit(ll.u, " ")))
     ll.arr <- t(array(ll.tmp, dim = c(2, length(ll.tmp)/2)))[, 2:1]
-    dist <- fields::rdist.earth(ll.arr, cbind(lon, lat))
 
+    for(k in 1:length(lon)) { 
+    dist <- fields::rdist.earth(ll.arr, cbind(lon[k], lat[k]))
+    profile.data <- array(NA,
+        dim = c(length(levels), length(variables), length(times)))
+
+    for(j in 1:length(times)) {
     if(spatial.average) {  
         s.i <- sort(dist, index = TRUE)$ix[1:points]
         sa.tmp <- as.numeric(unlist(strsplit(ll.u[s.i], " ")))
@@ -106,27 +114,30 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
         proj <- GEOmap::setPROJ(type = 2, LAT0 = lat, LON0 = lon)
         cart.pts <- GEOmap::GLOB.XY(sa.arr[, 2], sa.arr[, 1], proj)
 
-        for(k in seq_len(length(levels))) {
-            for(j in seq_len(length(variables))) {
-                vl.i   <- which(model.data$levels == levels[k] & model.data$variables == variables[j])
+        for(l in seq_len(length(levels))) {
+            for(m in seq_len(length(variables))) {
+                vl.i   <- which(model.data$levels == levels[l] & model.data$variables == variables[m] & model.data$forecast.date == times[j])
                 ll.vl  <- ll.all[vl.i]
                 val.vl <- model.data$value[vl.i]
                 d.i <- match(ll.u[s.i], ll.vl)             
                 layer.img <- cbind(cart.pts$x, cart.pts$y, val.vl[d.i])
-                profile.data[k, j] <- MBA::mba.points(layer.img, cbind(0, 0))[[1]][3]
+                profile.data[l, m, j] <- MBA::mba.points(layer.img, cbind(0, 0))[[1]][3]
             }
         }
      } else { #Nearest grid node
-         d.i  <- which(ll.all == ll.u[which(dist == min(dist))])
+         d.i  <- which(ll.all == ll.u[which(dist == min(dist))] & model.data$forecast.date == times[j])
          var.tmp <- model.data$variables[d.i]
          lev.tmp <- model.data$levels[d.i]
          val.tmp <- model.data$value[d.i]
-         for(k in 1:length(variables)) {
-             v.i <- which(var.tmp == variables[k])
-             profile.data[match(lev.tmp[v.i], levels), k]  <- val.tmp[v.i]
+         for(l in 1:length(variables)) {
+             v.i <- which(var.tmp == variables[l])
+             profile.data[match(lev.tmp[v.i], levels), l, j]  <- val.tmp[v.i]
          }
      }
-   return(as.numeric(profile.data))
+     }
+     profile[[k]] <- list(profile.data = profile.data, location = c(lon[k], lat[k]), forecast.date = times)
+   } 
+   return(profile)
 }
 
 ModelGrid <- function(model.data, resolution, grid.type = "latlon", levels = NULL, variables = NULL, model.domain = NULL, cartesian.nodes = NULL) {
