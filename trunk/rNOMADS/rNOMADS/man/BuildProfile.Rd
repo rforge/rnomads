@@ -7,10 +7,10 @@ Get model data at a specific point.
 Takes the output of \code{\link{ReadGrib}} or \code{\link{DODSGrab}} and extracts data at a specific point, performing interpolation if required.
 }
 \usage{
-BuildProfile(gridded.data, lon, lat, spatial.average)
+BuildProfile(model.data, lon, lat, spatial.average, points = 4)
 }
 \arguments{
-  \item{gridded.data}{
+  \item{model.data}{
       Data structure returned by \code{\link{ReadGrib}} or \code{\link{DODSGrab}}.
 }
   \item{lon}{
@@ -70,7 +70,8 @@ grib.info <- GribGrab(model.url, pred, levels, variables,
 grib.data <- ReadGrib(grib.info$file.name, levels, variables)
 
 profile <- BuildProfile(grib.data, lon, lat, TRUE, points = 8)
-plot(profile[[1]]$profile.data[,2, 1] - 272.15, profile[[1]]$profile.data[,1, 1], xlab = "Temperature (C)",
+plot(profile[[1]]$profile.data[,2, 1] - 272.15, 
+   profile[[1]]$profile.data[,1, 1], xlab = "Temperature (C)",
    ylab = "Height (m)", main = "Temperature Profile above Chapel Hill, NC")
 }
 }

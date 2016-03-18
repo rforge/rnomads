@@ -48,7 +48,7 @@ GetClosestForecasts(abbrev, forecast.date, model.date = "latest",
 Daniel C. Bowman \email{daniel.bowman@unc.edu}
 }
 \seealso{
-\code{\link{RTModelProfile}}, \code{\link{BuildProfile}}, \code{\link{GribGrab}}
+\code{\link{BuildProfile}}, \code{\link{GribGrab}}
 }
 \examples{
 

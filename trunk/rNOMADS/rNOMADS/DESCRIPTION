@@ -1,8 +1,8 @@
 Package: rNOMADS 
 Type: Package
 Title: An Interface to the NOAA Operational Model Archive and Distribution System
-Version: 2.1.7
-Date: 2016-01-14
+Version: 2.2.0
+Date: 2016-03-18
 Authors@R: c(person(given="Daniel C.",family="Bowman", role=c("aut", "cre"),
         email="daniel.bowman@unc.edu"))
 Depends: R (>= 3.2.2), rvest (>= 0.3.0)

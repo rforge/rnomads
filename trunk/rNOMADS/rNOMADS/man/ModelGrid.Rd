@@ -57,7 +57,7 @@ Daniel C. Bowman \email{daniel.bowman@unc.edu}
 }
 
 \seealso{
-\code{\link{ReadGrib}}, \code{\link{BuildProfile}}, \code{\link{RTModelProfile}}
+\code{\link{ReadGrib}}, \code{\link{DODSGrab}}
 }
 \examples{
 \dontrun{
