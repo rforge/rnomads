@@ -77,7 +77,6 @@ lat <- c(35.907492)
 
 #Get the data for each
 resolution <- c(0.5, 0.5)
-grid.type <- "latlon"
 
 \dontrun{
 back.profile <- RTModelProfile(forecasts$model.url, forecasts$back.forecast,

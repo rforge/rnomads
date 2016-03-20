@@ -46,6 +46,7 @@ Hurricanes and tropical storms appear as small circular regions in this map.
 library(GEOmap)
 library(rNOMADS)
 library(fields)
+library(aqfig)
 
 #Get latest GFS model
 
@@ -63,14 +64,14 @@ variables <- c("tmp2m", "rh2m")
 
 ground.data <- DODSGrab(latest.model, latest.model.run,
    variables, time, lon, lat, display.url = FALSE)
-ground <- ModelGrid(ground.data, c(0.5, 0.5), "latlon")
+ground <- ModelGrid(ground.data, c(0.5, 0.5))
 
 lev <- c(28,28) #get 300 mb level
 variables <- c("tmpprs", "ugrdprs", "vgrdprs")
 atmos.data <- DODSGrab(latest.model, latest.model.run,
    variables, time, lon, lat, levels = lev, display.url = FALSE)
 
-atmos <- ModelGrid(atmos.data, c(0.5, 0.5), "latlon")
+atmos <- ModelGrid(atmos.data, c(0.5, 0.5))
 
 @
 
@@ -81,7 +82,7 @@ atmos <- ModelGrid(atmos.data, c(0.5, 0.5), "latlon")
 #Make model grid
 
 #Set up color scale
-colormap <- rev(rainbow(500, start = 0 , end = 5/6))
+colormap <- rev(rainbow(100, start = 0 , end = 5/6))
 
 ind <- which(ground$variables == "tmp2m")
 #Save image to PNG file
@@ -98,6 +99,8 @@ image(ground$x, sort(ground$y), ground$z[1,ind,,], col = colormap,
 #Plot coastlines
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA)
+vertical.image.legend(col=colormap, 
+    zlim = range(ground$z[1,ind,,]) - 272.15)
 
 #Turn of PNG device
 #Omit this line if you want to display image
@@ -109,13 +112,15 @@ dev.off()
 #FIGURE 2
 #Temperature at 300 mb
 ind <- which(atmos$variables == "tmpprs")
-colormap <- rev(rainbow(500, start = 0 , end = 5/6))
+colormap <- rev(rainbow(100, start = 0 , end = 5/6))
 png(file = "fig_300mb_temp.png", width = 1000, height = 750)
 image(atmos$x, atmos$y, atmos$z[1,ind,,], col = colormap,
     xlab = "Longitude", ylab = "Latitude", 
     main = paste("World Temperature at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA)
+vertical.image.legend(col=colormap, 
+    zlim = range(atmos$z[1,ind,,]) - 272.15)
 dev.off()
 @
 
@@ -123,7 +128,7 @@ dev.off()
 #FIGURE 3
 #Relative humidity at ground level
 
-colormap <- rainbow(500, start = 0 , end = 5/6)
+colormap <- rev(cm.colors(100))
 ind <- which(ground$variables == "rh2m")
 png(file = "fig_ground_rh.png", width = 1000, height = 750)
 image(ground$x, ground$y, ground$z[1,ind,,], col = colormap,
@@ -132,6 +137,9 @@ image(ground$x, ground$y, ground$z[1,ind,,], col = colormap,
     ground$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
+vertical.image.legend(col=colormap,
+    zlim = range(ground$z[1,ind,,]))
+
 dev.off()
 @
 
@@ -141,21 +149,23 @@ dev.off()
 ew.ind <- which(atmos$variables == "ugrdprs")
 ns.ind <- which(atmos$variables == "vgrdprs")
 winds.vel <- sqrt(atmos$z[1,ew.ind,,]^2 + atmos$z[1,ns.ind,,]^2)
-colormap <- rainbow(500, start = 0 , end = 5/6)
+colormap <- terrain.colors(100)
 png(file = "fig_300mb_winds.png", width = 1000, height = 750)
 image(atmos$x, atmos$y, winds.vel, col = colormap,
     xlab = "Longitude", ylab = "Latitude", 
     main = paste("World Wind Velocity at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
+vertical.image.legend(col=colormap,
+    zlim = range(winds.vel))
 dev.off()
 @ 
 
 <<>>=
 #Get model data
-#and plot 10 m wind speed for 6 hr forecast
+#and plot gust for 6 hr forecast
 
-variables <- c("ugrd10m", "vgrd10m")
+variables <- c("gustsfc")
 time <- c(2,2) #6 hr forecast
 
 ground.wind.data <- DODSGrab(latest.model, latest.model.run,
@@ -164,17 +174,16 @@ ground.wind.data <- DODSGrab(latest.model, latest.model.run,
 #Make an array for quick indexing
 ground.wind <- ModelGrid(ground.wind.data, c(0.5, 0.5))
 
-#Wind magnitude
-winds.vel <- sqrt(ground.wind$z[1,1,,]^2 + ground.wind$z[1,2,,]^2)
-
 #FIGURE 5
 png(file = "fig_ground_gust.png", width = 1000, height = 750)
-image(ground.wind$x, ground.wind$y, winds.vel, col = colormap,
+image(ground.wind$x, ground.wind$y, ground.wind$z[1,1,,], col = colormap,
     xlab = "Longitude", ylab = "Latitude",
-    main = paste("World Wind Speed at 10 m above ground:", 
+    main = paste("World Wind Gust:", 
     ground.wind$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
+vertical.image.legend(col=colormap,
+    zlim = range(ground.wind$z[1,1,,]))
 dev.off()
 
 @
@@ -187,7 +196,7 @@ dev.off()
 \begin{center}
 \includegraphics{fig_ground_temp.png}
 \end{center}
-\caption{Temperature at 2 m above ground (red is hot, purple is cold).  
+\caption{Temperature at 2 m above ground.
 Note how high altitude regions show up as cold spots.}
 \label{fig:2m_temp}
 \end{figure}
@@ -196,7 +205,7 @@ Note how high altitude regions show up as cold spots.}
 \begin{center}
 \includegraphics{fig_300mb_temp.png}
 \end{center}
-\caption{Temperature of the upper troposphere (red is hot, purple is cold).  
+\caption{Temperature of the upper troposphere.
 Note how there is little relation between the location of continents and temperature.}
 \label{fig:300mb_temp}
 \end{figure}
@@ -206,7 +215,7 @@ Note how there is little relation between the location of continents and tempera
 \begin{center}
 \includegraphics{fig_ground_rh.png}
 \end{center}
-\caption{Relative humidity at 2 m above the ground (purple is high, red is low).
+\caption{Relative humidity at 2 m above the ground.
 Desert regions show up nicely.}
 \label{fig:2m_rh}
 \end{figure}
@@ -215,7 +224,7 @@ Desert regions show up nicely.}
 \begin{center}
 \includegraphics{fig_300mb_winds.png}
 \end{center}
-\caption{Wind velocity in the upper troposphere (purple is fast, red is slow).
+\caption{Wind velocity in the upper troposphere.
 Jet streams may show up here as patchy regions of intense wind.}
 \label{fig:300mb_wind}
 \end{figure}
@@ -225,7 +234,7 @@ Jet streams may show up here as patchy regions of intense wind.}
 \begin{center}
 \includegraphics{fig_ground_gust.png}
 \end{center}
-\caption{Wind gust speed at the ground surface 6 hours from now (purple is fast, red is slow).
+\caption{Speed of wind gusts at the ground surface 6 hours from now.
 Hurricanes and tropical storms show up as small purple dots.}
 \label{fig:ground_gust}
 \end{figure}
@@ -240,16 +249,16 @@ The tropopause is clearly visible in the temperature profile (Figure \ref{fig:te
 Wind speeds can be surprisingly high at times (Figure \ref{fig:wind_profile}).
 We then show a quick calculation of sound velocity versus height (Figure \ref{fig:c_profile}) using the formula:
 \begin{equation}
-c = 331.3 \sqrt{1 + \frac{T}{272.15}}
+c = \sqrt{\gamma R_{a} T}
 \end{equation}
-where $c$ is the speed of sound in dry air and $T$ is the temperature in degrees Celsius.
+where $c$ is the speed of sound, $\gamma$ is the adiabatic index of air, $R_{a}$ is the specific gas constant of air, and $T$ is temperature.
 This does not take into account wind speed (a significant omission!).
 
 Finally, we end with a calculation of atmospheric density versus height (Figure \ref{fig:rho_profile}) via
 \begin{equation}
-\rho = \frac{p}{R_{specific} T}
+\rho = \frac{p}{R_{a} T}
 \end{equation}
-where $\rho$ is density, $p$ is pressure, $R_{specific}$ is the specific gas constant for dry air and $T$ is temperature.
+where $\rho$ is density and $p$ is pressure.
 
 \subsection{Code}
 
@@ -282,12 +291,17 @@ latest.model.run <- tail(model.runs$model.run, 1)
 time <- c(0,0) #Analysis model
 lev <- c(0, 46) #All levels in atmosphere
 variables <- c("tmpprs", "hgtprs", "ugrdprs", "vgrdprs")
-#Temperature
-model.data <- DODSGrab(latest.model, latest.model.run,
-   variables, time, rep(model.lon.ind, 2), rep(model.lat.ind, 2), 
-    levels = lev, display.url = FALSE)
 
-hgt <- model.data$value[which(model.data$variable == "hgtprs")]
+model.data <- DODSGrab(latest.model, latest.model.run,
+   variables, time, c(model.lon.ind - 2, model.lon.ind + 2),
+   c(model.lat.ind - 2, model.lat.ind + 2), 
+   levels = lev, display.url = FALSE)
+
+#Build atmospheric profile
+profile <- BuildProfile(model.data, lon, lat, 
+    spatial.average = TRUE, points = 8)
+
+hgt <- profile[[1]]$profile.data[, which(variables == "hgtprs"),]
 
 @
 
@@ -296,7 +310,7 @@ hgt <- model.data$value[which(model.data$variable == "hgtprs")]
 #FIGURE 6 - temperature
 
 
-tmp <- model.data$value[which(model.data$variable == "tmpprs")] - 272.15
+tmp <- profile[[1]]$profile.data[, which(variables == "tmpprs"),]
 
 #Let's make a spline
 
@@ -313,38 +327,37 @@ plot(tmp, hgt, pch = 19, col = "red",
    atmos$fcst.date))
 lines(synth.tmp, synth.hgt, col = "blue")
 legend("topright", col = c("red", "blue"), pch = c(19, NA),
-   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"),
+   bg = "white")
 dev.off()
 
 @
 
 <<>>=
 
-#FIGURE 7 - Wind Speed
+#FIGURE 7 - Wind Wheel
 
-wu <- model.data$value[which(model.data$variable == "ugrdprs")]
-wv <- model.data$value[which(model.data$variable == "vgrdprs")]
-wvel <- sqrt(wu^2 + wv^2) 
-
-#Convert to km/hr
-wvel <- wvel * 3.6
+meridional <- profile[[1]]$profile.data[, which(variables == "ugrdprs"),]
+zonal <- profile[[1]]$profile.data[, which(variables == "vgrdprs"),]
 
 #Let's make a spline 
 
-tmp.spline <- splinefun(hgt, wvel, method = "natural")
+merid.spline <- splinefun(hgt, meridional, method = "natural")
+zone.spline  <- splinefun(hgt, zonal, method = "natural")
 
-synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
-synth.wvel <- tmp.spline(synth.hgt)
+synth.hgt   <- seq(min(hgt), max(hgt), length.out = 1000)
+synth.merid <- merid.spline(synth.hgt)
+synth.zone  <- zone.spline(synth.hgt)
 
 png(file = "fig_wind_profile.png", width = 500, height = 500)
 
-plot(wvel, hgt, pch = 19, col = "red",
-   xlab = "Wind Speed (km/hr)", ylab = "Height (m)",
-   main = paste("Wind Speed versus Geopotential Height:",  
-   atmos$fcst.date))
-lines(synth.wvel, synth.hgt, col = "blue")
-legend("bottomright", col = c("red", "blue"), pch = c(19, NA),
-   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+PlotWindProfile(synth.zone, synth.merid, synth.hgt, lines = TRUE, 
+    points = FALSE, elev.circles = c(0, 25000, 50000), 
+    elev.labels = c(0, 25, 50), 
+    radial.lines = seq(45, 360, by = 45), colorbar = TRUE, invert = FALSE, 
+    point.cex = 2, pch = 19, lty = 1, lwd = 3, 
+    height.range = c(0, 50000), colorbar.label = "Wind Speed (m/s)")
+
 dev.off()
 
 @
@@ -353,17 +366,18 @@ dev.off()
 
 #FIGURE 8
 #NAIVE SOUND SPEED
-
 #Assuming it only depends on temperature
-#Let's make a spline
+
+R.sp  <- 287.058 #Specific gas constant of air
+gamma <- 1.4 #Adiabatic index
 
 tmp.spline <- splinefun(hgt, tmp, method = "natural")
 
 synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
 synth.tmp <- tmp.spline(synth.hgt)
 
-c <- 331.5 * sqrt(1 + tmp / 272.15)
-synth.c <- 331.5 * sqrt(1 + synth.tmp / 272.15)
+c       <- sqrt(gamma * R.sp * tmp)
+synth.c <- sqrt(gamma * R.sp * synth.tmp)
 
 png(file = "fig_sound_profile.png", width = 500, height = 500)
 
@@ -373,7 +387,8 @@ plot(c, hgt, pch = 19, col = "red",
    atmos$fcst.date))
 lines(synth.c, synth.hgt, col = "blue")
 legend("topright", col = c("red", "blue"), pch = c(19, NA),
-   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"))
+   lty = c(NA, 1), legend = c("Model Values", "Spline Fit"),
+   bg = "white")
 dev.off()
 
 @
@@ -384,9 +399,8 @@ dev.off()
 #ATMOSPHERIC DENSITY (ASSUMING DRY AIR)
 
 p <- unique(model.data$levels) * 100
-R <- 287.058 #Specific gas constant, J/(kg * K)
 
-rho <- p / ((tmp + 272.15) * R) #Air density
+rho <- p / (tmp * R.sp) #Air density
 
 rho.spline <- splinefun(hgt, rho, method = "natural")
 synth.hgt <- seq(min(hgt), max(hgt), length.out = 1000)
@@ -421,7 +435,7 @@ dev.off()
 \begin{center}
 \includegraphics{fig_wind_profile.png}
 \end{center}
-\caption{Wind speed profile of the atmosphere near Chapel Hill, North Carolina.}
+\caption{Wind profile of the atmosphere near Chapel Hill, North Carolina.}
 \label{fig:wind_profile}
 \end{figure}
 
@@ -439,8 +453,7 @@ This calculation assumes temperature dependence only.}
 \begin{center}
 \includegraphics{fig_density_profile.png}
 \end{center}
-\caption{Air profile of the atmosphere near Chapel Hill, North Carolina.
-This calculation assumes that the air is perfectly dry.}
+\caption{Density profile of the atmosphere near Chapel Hill, North Carolina.}
 \label{fig:rho_profile}
 \end{figure}
 
