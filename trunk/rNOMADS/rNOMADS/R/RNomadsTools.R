@@ -135,7 +135,8 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
                  }
              }
          }
-         profile[[k]] <- list(profile.data = profile.data, location = c(lon[k], lat[k]), forecast.date = times)
+         profile[[k]] <- list(profile.data = profile.data, location = c(lon[k], lat[k]), forecast.date = times,
+         variables = variables, levels = levels)
    } 
    return(profile)
 }

@@ -34,6 +34,8 @@ It is much more efficient to download a large chunk of data and extract profile 
 \item{profile$profile.data}{A levels x variables x time matrix with data at a specific point}
 \item{profile$location}{The location for which the profile is generated}
 \item{profile$forecast.date}{What dates and times the profile contains}
+\item{profile$variables}{The variables the profile contains}
+\item{profile$levels}{The levels the profile contains}
 }
 \author{
 Daniel C. Bowman \email{daniel.bowman@unc.edu}

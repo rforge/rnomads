@@ -275,7 +275,7 @@ Jet streams may show up here as patchy regions of intense wind.}
 \includegraphics{fig_ground_gust.png}
 \end{center}
 \caption{Wind gust speed at the ground surface 6 hours from latest GFS run.
-Hurricanes and tropical storms show up as small purple dots.}
+Hurricanes and tropical storms show up as small white dots.}
 \label{fig:ground_gust}
 \end{figure}
 
@@ -367,7 +367,7 @@ png(file = "fig_tmp_profile.png", width = 500, height = 500)
 plot(tmp, hgt, pch = 19, col = "red", 
    xlab = "Temperature (C)", ylab = "Height (m)",
    main = paste("Temperature versus Geopotential Height:",  
-   atmos$fcst.date))
+   profile[[1]]$forecast.date))
 lines(synth.tmp, synth.hgt, col = "blue")
 legend("topright", col = c("red", "blue"), pch = c(19, NA),
    lty = c(NA, 1), legend = c("Model Values", "Spline Fit"),
@@ -380,8 +380,8 @@ dev.off()
 
 #FIGURE 7 - Wind Wheel
 
-meridional <- profile[[1]]$profile.data[, which(variables == "ugrd"),]
-zonal <- profile[[1]]$profile.data[, which(variables == "vgrd"),]
+meridional <- profile[[1]]$profile.data[, which(variables == "UGRD"),]
+zonal <- profile[[1]]$profile.data[, which(variables == "VGRD"),]
 
 #Let's make a spline 
 
@@ -443,7 +443,7 @@ dev.off()
 #FIGURE 8
 #ATMOSPHERIC DENSITY (ASSUMING DRY AIR)
 
-p <- as.numeric(gsub("\\D", "", profile$levels)) * 100
+p <- as.numeric(gsub("\\D", "", profile[[1]]$levels)) * 100
 
 rho <- p / (tmp  * R.sp) #Air density
 
