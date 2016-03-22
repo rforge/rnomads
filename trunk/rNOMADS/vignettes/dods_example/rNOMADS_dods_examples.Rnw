@@ -337,8 +337,8 @@ dev.off()
 
 #FIGURE 7 - Wind Wheel
 
-meridional <- profile[[1]]$profile.data[, which(variables == "ugrdprs"),]
-zonal <- profile[[1]]$profile.data[, which(variables == "vgrdprs"),]
+meridional <- profile[[1]]$profile.data[, which(variables == "vgrdprs"),]
+zonal <- profile[[1]]$profile.data[, which(variables == "ugrdprs"),]
 
 #Let's make a spline 
 
