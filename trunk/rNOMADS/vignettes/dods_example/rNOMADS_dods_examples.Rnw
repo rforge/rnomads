@@ -321,11 +321,11 @@ synth.tmp <- tmp.spline(synth.hgt)
 
 png(file = "fig_tmp_profile.png", width = 500, height = 500)
 
-plot(tmp, hgt, pch = 19, col = "red", 
+plot(tmp - 272.15, hgt, pch = 19, col = "red", 
    xlab = "Temperature (C)", ylab = "Height (m)",
    main = paste("Temperature versus Geopotential Height:",  
    atmos$fcst.date))
-lines(synth.tmp, synth.hgt, col = "blue")
+lines(synth.tmp - 272.15, synth.hgt, col = "blue")
 legend("topright", col = c("red", "blue"), pch = c(19, NA),
    lty = c(NA, 1), legend = c("Model Values", "Spline Fit"),
    bg = "white")
