@@ -529,3 +529,64 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude = NUL
        }
     }
 }     
+
+SubsetNOMADS <- function(model.data, levels = NULL, variables = NULL, lon = NULL, lat = NULL,
+ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
+   
+   #Subset the output of DODSGrab or ReadGrib to include only those parameters you are interested in
+   #INPUTS
+   #    MODEL.DATA     - Output of DODSGrab or ReadGrib
+   #    LEVELS         - Which levels to keep, as vector
+   #    VARIABLES      - Which variables to keep, as vector
+   #    LON            - Which longitude points to keep, as vector, note this culd be very inefficient
+   #    LAT            - Which latitude points to keep, as vector, note this culd be very inefficient
+   #    ENSEMBLE       - Which ensemble runs to keep, as vector
+   #    FORECAST.DATE  - Which forecast dates to keep, as vector.
+   #    MODEL.RUN.DATE - Which model run dates to keep, as vector; not sure if this will ever be used 
+   #OUTPUTS
+   #    MODEL.DATA.SUB - Subsetted model.data per above criteria
+
+   d.i <- rep(0, length(model.data$value))
+ 
+   if(!is.null(levels)) { 
+      d.i <- d.i + model.data$levels %in% levels 
+   }
+
+   if(!is.null(variables)) {
+       d.i <- d.i + model.data$varibles %in% variables
+   }
+
+   if(!is.null(lon)) {
+       d.i <- d.i + model.data$lon %in% lon
+   }
+
+   if(!is.null(lat)) {
+       d.i <- d.i + model.data$lat %in% lat
+   }
+
+   if(!is.null(ensemble)) {
+       d.i <- d.i + model.data$ensemble %in% ensemble
+   }
+
+   if(!is.null(forecast.date)) {
+       d.i <- d.i + model.data$forecast.date %in% forecast.date
+   }
+
+   if(!is.null(model.run.date)) {
+       d.i <- d.i + model.data$model.run.date %in% model.run.date
+   }
+
+   list.names <- names(model.data)
+   model.data.sub <- NULL
+
+   for(list.name %in% list.names) {
+      if(length(model.data[[list.name]]) == length(d.i)) {
+          model.data.sub[[list.name]] <- model.data[[list.name]][d.i]
+      } else {
+          model.data.sub[[list.name]] <- model.data[[list.name]]
+      }
+
+   }
+}
+
+          
