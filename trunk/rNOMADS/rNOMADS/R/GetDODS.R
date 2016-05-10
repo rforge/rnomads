@@ -152,6 +152,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
        forecast.date  = NULL,
        variables      = NULL,
        levels         = NULL,
+       ensemble       = NULL,
        lon            = NULL,
        lat            = NULL,
        value          = NULL,
@@ -232,13 +233,13 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
            r.end <- length(val.tmp)
            get.rows <- r.end - r.start + 1
            model.data$model.run.date <- append(model.data$model.run.date, rep(model.run.date, get.rows))
-           model.data$forecast.date  <- append(model.data$forecast.date, rep(times[val.tmp[1] + 1], get.rows))
+           model.data$forecast.date  <- append(model.data$forecast.date, rep(times[val.tmp[1 + e.ind] + 1], get.rows))
            model.data$variables      <- append(model.data$variables, rep(variable, get.rows))
            if(l.ind) {
-               model.data$levels <- append(model.data$levels, rep(levels.out[val.tmp[2] + 1], get.rows))
+               model.data$levels <- append(model.data$levels, rep(levels.out[val.tmp[2 + e.ind] + 1], get.rows))
            }
            if(e.ind) {
-               model.data$ensemble <- append(model.data$ensemble, rep(ens.out[val.tmp[1]], get.rows))
+               model.data$ensemble <- append(model.data$ensemble, rep(ens.out[val.tmp[1] + 1], get.rows))
            }
            model.data$lon            <- append(model.data$lon, lons) 
            model.data$lat            <- append(model.data$lat, rep(lats[val.tmp[2 + l.ind + e.ind] + 1], get.rows))

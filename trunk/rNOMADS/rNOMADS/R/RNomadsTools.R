@@ -546,40 +546,40 @@ ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
    #OUTPUTS
    #    MODEL.DATA.SUB - Subsetted model.data per above criteria
 
-   d.i <- rep(0, length(model.data$value))
+   d.i <- rep(1, length(model.data$value))
  
    if(!is.null(levels)) { 
-      d.i <- d.i + model.data$levels %in% levels 
+      d.i <- d.i & model.data$levels %in% levels 
    }
 
    if(!is.null(variables)) {
-       d.i <- d.i + model.data$varibles %in% variables
+       d.i <- d.i & model.data$variables %in% variables
    }
 
    if(!is.null(lon)) {
-       d.i <- d.i + model.data$lon %in% lon
+       d.i <- d.i & model.data$lon %in% lon
    }
 
    if(!is.null(lat)) {
-       d.i <- d.i + model.data$lat %in% lat
+       d.i <- d.i & model.data$lat %in% lat
    }
 
    if(!is.null(ensemble)) {
-       d.i <- d.i + model.data$ensemble %in% ensemble
+       d.i <- d.i & model.data$ensemble %in% ensemble
    }
 
    if(!is.null(forecast.date)) {
-       d.i <- d.i + model.data$forecast.date %in% forecast.date
+       d.i <- d.i & model.data$forecast.date %in% forecast.date
    }
 
    if(!is.null(model.run.date)) {
-       d.i <- d.i + model.data$model.run.date %in% model.run.date
+       d.i <- d.i & model.data$model.run.date %in% model.run.date
    }
 
    list.names <- names(model.data)
    model.data.sub <- NULL
 
-   for(list.name %in% list.names) {
+   for(list.name in list.names) {
       if(length(model.data[[list.name]]) == length(d.i)) {
           model.data.sub[[list.name]] <- model.data[[list.name]][d.i]
       } else {
@@ -587,6 +587,7 @@ ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
       }
 
    }
+   return(model.data.sub)
 }
 
           
