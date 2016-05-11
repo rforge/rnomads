@@ -88,6 +88,11 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
     #       $PROFILE.DATA - A date x levels x variables matrix with atmospheric data for given point
     #       $LOCATION - A two element vector the lat/lon coordinates of the locations
     #       $FORECAST.DATE - Date and time of forecast
+    if(!is.null(model.data$ensembles)) {
+       if(length(unique(model.data$ensembles)) > 1) {
+          stop("There appears to be more than one ensembles run in your data set!  BuildProfile can only handle one at a time.")
+       }
+    }
  
     profile   <- NULL
  
@@ -177,13 +182,19 @@ ModelGrid <- function(model.data, resolution, levels = NULL, variables = NULL, m
 
     model.run.date <- unique(model.data$model.run.date)
     if(length(model.run.date) > 1) {
-        warning("There appears to be more than one model run date in your model grid!")
+        stop("There appears to be more than one model run date in your data set! ModelGrid can only handle one at a time.")
+    }
+
+    if(!is.null(model.data$ensembles)) {
+       if(length(unique(model.data$ensembles)) > 1) {
+          stop("There appears to be more than one ensembles run in your data set!  ModelGrid can only handle one at a time.")
+       }
     }
 
     fcst.date <- as.POSIXlt(unique(model.data$forecast.date), tz = "GMT")
 
     if(length(fcst.date) > 1) {
-        warning("There appears to be more than one model run date in your model grid!")
+        stop("There appears to be more than one forecast in your data set! ModelGrid can only handle one at a time.")
     }
 
     if(is.null(variables)) {
@@ -531,7 +542,7 @@ PlotWindProfile <- function(zonal.wind, meridional.wind, height, magnitude = NUL
 }     
 
 SubsetNOMADS <- function(model.data, levels = NULL, variables = NULL, lon = NULL, lat = NULL,
-ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
+ensembles = NULL, forecast.date = NULL, model.run.date = NULL) {
    
    #Subset the output of DODSGrab or ReadGrib to include only those parameters you are interested in
    #INPUTS
@@ -540,7 +551,7 @@ ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
    #    VARIABLES      - Which variables to keep, as vector
    #    LON            - Which longitude points to keep, as vector, note this culd be very inefficient
    #    LAT            - Which latitude points to keep, as vector, note this culd be very inefficient
-   #    ENSEMBLE       - Which ensemble runs to keep, as vector
+   #    ENSEMBLE       - Which ensembles runs to keep, as vector
    #    FORECAST.DATE  - Which forecast dates to keep, as vector.
    #    MODEL.RUN.DATE - Which model run dates to keep, as vector; not sure if this will ever be used 
    #OUTPUTS
@@ -564,8 +575,8 @@ ensemble = NULL, forecast.date = NULL, model.run.date = NULL) {
        d.i <- d.i & model.data$lat %in% lat
    }
 
-   if(!is.null(ensemble)) {
-       d.i <- d.i & model.data$ensemble %in% ensemble
+   if(!is.null(ensembles)) {
+       d.i <- d.i & model.data$ensembles %in% ensembles
    }
 
    if(!is.null(forecast.date)) {

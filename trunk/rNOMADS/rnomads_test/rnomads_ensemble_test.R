@@ -1,4 +1,4 @@
-#Test DODS ensemble downloading and subset capability
+#
 
 #Get library and source updated files (change path to reflect your computer's setup)
 

@@ -121,7 +121,7 @@ GetDODSModelRunInfo <- function(model.url, model.run) {
    return(model.info)
 }
 
-DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = NULL, ensemble = NULL, display.url = TRUE, verbose = FALSE, request.sleep = 1) {
+DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = NULL, ensembles = NULL, display.url = TRUE, verbose = FALSE, request.sleep = 1) {
    #Get data from DODS.  Note that this is slower than GribGrab but will work on all operating systems.
    #The output of this function will be the same as the output of ReadGrib in order to maintain consistency across rNOMADS.
    #ALL INDICES START FROM ZERO 
@@ -134,7 +134,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
    #    LAT is an **index list** of latitudes per info from GetDODSModelRunInfo "c(x,y)"
    #    LEVELS is an **index list** of levels per info from GetDODSModelRunInfo "c(x,y)"
    #         if not NULL, try to request the variable at a certain level.  Will fail if the variable does not have associated levels.
-   #    ENSEMBLE is an **index list** of ensemble runs to pull, if available
+   #    ENSEMBLE is an **index list** of ensembles runs to pull, if available
    #    DISPLAY.URL asks whether to display the URL request for debugging purposes.
    #        You can paste it into your browser to check to make sure things are working correctly
    #    VERBOSE gives a very talkative description of the download process
@@ -152,7 +152,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
        forecast.date  = NULL,
        variables      = NULL,
        levels         = NULL,
-       ensemble       = NULL,
+       ensembles       = NULL,
        lon            = NULL,
        lat            = NULL,
        value          = NULL,
@@ -170,18 +170,18 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
            level.str <- ""
        }
  
-       e.ind <- !is.null(ensemble)
+       e.ind <- !is.null(ensembles)
     
        if(e.ind) {
-           ensemble.str <- paste0("[", paste0(ensemble, collapse = ":"), "]")
+           ensembles.str <- paste0("[", paste0(ensembles, collapse = ":"), "]")
        } else {
-           ensemble.str <- ""
+           ensembles.str <- ""
        }
 
        lat.str <- paste0("[", paste0(lat, collapse = ":"), "]")
        lon.str <- paste0("[", paste0(lon, collapse = ":"), "]")
       
-       data.url <- paste0(preamble, ensemble.str, time.str, level.str, lat.str, lon.str)  
+       data.url <- paste0(preamble, ensembles.str, time.str, level.str, lat.str, lon.str)  
        
        if(display.url) {
            print(data.url)
@@ -239,7 +239,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
                model.data$levels <- append(model.data$levels, rep(levels.out[val.tmp[2 + e.ind] + 1], get.rows))
            }
            if(e.ind) {
-               model.data$ensemble <- append(model.data$ensemble, rep(ens.out[val.tmp[1] + 1], get.rows))
+               model.data$ensembles <- append(model.data$ensembles, rep(ens.out[val.tmp[1] + 1], get.rows))
            }
            model.data$lon            <- append(model.data$lon, lons) 
            model.data$lat            <- append(model.data$lat, rep(lats[val.tmp[2 + l.ind + e.ind] + 1], get.rows))
@@ -251,7 +251,7 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
        }
    
        if(!e.ind) {
-           model.data$ensemble <- rep(NA, length(model.data$value))
+           model.data$ensembles <- rep(NA, length(model.data$value))
        }
  
        model.data$request.url <- append(model.data$request.url, data.url)
