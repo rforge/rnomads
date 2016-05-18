@@ -247,11 +247,11 @@ DODSGrab <- function(model.url, model.run, variables, time, lon, lat, levels = N
        }
        
        if(!l.ind) {
-           model.data$levels <- rep(NA, length(model.data$value))
+           model.data$levels <- rep("Level not defined", length(model.data$value))
        }
    
        if(!e.ind) {
-           model.data$ensembles <- rep(NA, length(model.data$value))
+           model.data$ensembles <- rep("Ensemble not defined", length(model.data$value))
        }
  
        model.data$request.url <- append(model.data$request.url, data.url)

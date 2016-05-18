@@ -65,14 +65,14 @@ urls.out <- CrawlModels(abbrev = "gfs_0p50",
 #If this throws an error, try urls.out[2]
 #because sometimes the web page appears before the data does
 
-model.parameters <- ParseModelPage(urls.out[1])
+model.parameters <- ParseModelPage(urls.out[2])
 latest.pred <- model.parameters$pred[1]
 levels <- c("2 m above ground", "300 mb")
 variables <- c("TMP", "RH", "UGRD", "VGRD")
 resolution <- c(0.5, 0.5)
 
 #Download model file
-grib.info <- GribGrab(urls.out[1], latest.pred, 
+grib.info <- GribGrab(urls.out[2], latest.pred, 
     levels, variables, verbose = FALSE)
 
 #Read the model file
