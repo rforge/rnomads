@@ -129,17 +129,23 @@ ReadGrib <- function(file.name, levels, variables, domain = NULL, file.type = "g
 
         #HERE IS THE EXTRACTION
         model.data.vector <- strsplit(paste(gsub("\"", "", csv.str), collapse = ","), split = ",")[[1]]
-        chunk.inds <- seq(1, length(model.data.vector) - 6, by = 7)
-        model.data <- list(model.run.date = model.data.vector[chunk.inds],
-            forecast.date = model.data.vector[chunk.inds + 1],
-            variables = model.data.vector[chunk.inds + 2],
-            levels = model.data.vector[chunk.inds + 3],
-            lon = as.numeric(model.data.vector[chunk.inds + 4]),
-            lat = as.numeric(model.data.vector[chunk.inds + 5]),
-            value = model.data.vector[chunk.inds + 6],
-            meta.data = "None - this field is used for grib1 files",
-            grib.type = file.type
-            )
+
+        if(length(model.data.vector) == 0) {  #Something went wrong: no data were returned
+            warning(paste0("No combinations of variables ", paste(variables, collapse = " "), " and levels ", paste(levels, collapse = " "), " yielded any data for the specified model and model domain."))
+            model.data <- NULL
+        } else { #Report data
+            chunk.inds <- seq(1, length(model.data.vector) - 6, by = 7)
+            model.data <- list(model.run.date = model.data.vector[chunk.inds],
+                forecast.date = model.data.vector[chunk.inds + 1],
+                variables = model.data.vector[chunk.inds + 2],
+                levels = model.data.vector[chunk.inds + 3],
+                lon = as.numeric(model.data.vector[chunk.inds + 4]),
+                lat = as.numeric(model.data.vector[chunk.inds + 5]),
+                value = model.data.vector[chunk.inds + 6],
+                meta.data = "None - this field is used for grib1 files",
+               grib.type = file.type
+               )
+          }
       } else if (file.type == "grib1") {
          op <- options("warn")
          options(warn = -1)
