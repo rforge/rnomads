@@ -3,8 +3,7 @@ CrawlModels <- function(abbrev = NULL, url = NULL, depth = NULL, verbose = TRUE)
    #See the NOMADSRealTimeList function for available models.
    #Alternatively, pass CrawlModels a URL to get a model that I have not included yet.
    #INPUTS
-   #    ABBREV - Model abbreviation as defined in NOMADSRealTimeList().  
-   #        If NULL, use the url you provided, if you did not provide one, throw error.
+   #    ABBREV - Model abbreviation as defined in NOMADSRealTimeList().  #        If NULL, use the url you provided, if you did not provide one, throw error.
    #    URL - Use your own URL and attempt to get model data from it.  
    #        This is in case NOMADS updates its system before I have a chance to update rNOMADS
    #    DEPTH - How many links to return; set this to 1 if you only want the latest model (this will speed things up significantly)
@@ -34,7 +33,7 @@ GribGrab <- function(model.url, preds, levels, variables, local.dir = ".", file.
     #    LEVELS is the vertical region to return data for,  as vector, generally from ParseModelPage
     #    VARIABLES is the data to return, as vector, generally from ParseModelPage
     #    LOCAL.DIR is the directory to save the files in
-    #    FILE.NAMES is the directory path and file names to save the grib files on disk, defaults to each pred in the current directory
+    #    FILE.NAMES is the file names to save the grib files on disk, defaults to each pred in the current directory
     #    MODEL.DOMAIN is a vector of latitudes and longitudes that specify the area to return a forecast for
     #    This is a rectangle with elements: west longitude, east longitude, north latitude, south latitude
     #    Defaults to entire planet
