@@ -11,7 +11,7 @@ Some of these files are in GRIB format, others are in GRIB2 format; select the a
 }
 \usage{
 ArchiveGribGrab(abbrev, model.date, model.run, preds,
-    local.dir = ".", file.name = "fcst.grb", tidy = FALSE,
+    local.dir = ".", file.names = NULL, tidy = FALSE,
     verbose = TRUE, download.method = NULL, file.type = "grib2")
 }
 \arguments{
@@ -30,8 +30,10 @@ ArchiveGribGrab(abbrev, model.date, model.run, preds,
   \item{local.dir}{
   Where to save the grib file, defaults to the current directory.
 }
-  \item{file.name}{
-  What to name the grib file, defaults to \code{"fcst.grb"}.
+  \item{file.names}{
+  A list of length \code{length(preds)} of file names to which the 
+  downloaded GRIB files are directed to.  
+  Default \code{NULL}, meaning files will be named per their model date and time.
 }
   \item{tidy}{
   If \code{TRUE}, remove all files with the suffix ".grb" from \code{local.dir} prior to downloading a new grib file.

@@ -7,7 +7,7 @@ ArchiveGribGrab <- function(abbrev, model.date, model.run, preds, local.dir = ".
     #    MODEL.RUN - Which hour the model was run (i.e. 00, 06, 12, 18 for GFS)
     #    PREDS - Which prediction to get (analysis is 00), a vector
     #    LOCAL.DIR is the directory to save the files in
-    #    FILE.NAME is the directory path and file name to save the grib file on disk, defaults to "fcst.grb" in current directory
+    #    FILE.NAMES is the directory path and file names to save the grib files on disk, defaults to "fcst.grb" in current directory
     #    TIDY asks whether to delete all grib files in the directory specified in FILE.NAME, default FALSE.
     #    This is useful to clear out previous model runs.
     #    It looks for all files named '.grb' and removes them.
@@ -20,6 +20,13 @@ ArchiveGribGrab <- function(abbrev, model.date, model.run, preds, local.dir = ".
     #        $LOCAL.DIR is the directory where the grib file is saved
     #        $FILE.NAME is the local file name where the data is stored
     #        $URL is the URL from which the file was downloaded
+
+   if(!is.null(file.names)) {
+      if(length(file.names) != length(preds)) {
+          stop("The length of the \"file.names\" argument is not the same as the length of the \"preds\" argument.  
+             Each file downloaded from NOMADS needs its own file name.")
+       }
+   }
 
    if(tidy) {
         unlink(list.files(local.dir, pattern = "*\\.grb$"))
@@ -48,11 +55,9 @@ ArchiveGribGrab <- function(abbrev, model.date, model.run, preds, local.dir = ".
     for(k in 1:length(preds)) {
         
         if(is.null(file.names)) {
-        file.part <- paste0(paste(model.date, collapse = ""), "_", 
-        sprintf("%02.f", as.numeric(model.run)), 
-        "00_", sprintf("%03.f", as.numeric(preds[k])), suffix)
-   
-        if(is.null(file.names)) {
+            file.part <- paste0(paste(model.date, collapse = ""), "_", 
+                sprintf("%02.f", as.numeric(model.run)), 
+                "00_", sprintf("%03.f", as.numeric(preds[k])), suffix)
             file.name <- file.part
         } else {
             file.name <- file.names[k]
