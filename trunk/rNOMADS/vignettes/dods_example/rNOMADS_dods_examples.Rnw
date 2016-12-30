@@ -234,7 +234,7 @@ Jet streams may show up here as patchy regions of intense wind.}
 \begin{center}
 \includegraphics{fig_ground_gust.png}
 \end{center}
-\caption{Speed of wind gusts at the ground surface 6 hours from now.
+\caption{6 hour prediction of wind gust speed at the ground surface.
 Hurricanes and tropical storms show up as small white dots.}
 \label{fig:ground_gust}
 \end{figure}

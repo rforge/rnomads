@@ -76,7 +76,7 @@ grib.info <- GribGrab(urls.out[2], latest.pred,
     levels, variables, verbose = FALSE)
 
 #Read the model file
-grb.data <- ReadGrib(grib.info$file.name, levels, variables)
+grb.data <- ReadGrib(grib.info[[1]]$file.name, levels, variables)
 
 #Make an array for quick indexing
 atmos <- ModelGrid(grb.data, resolution)
@@ -194,7 +194,7 @@ urls.out <- CrawlModels(abbrev = "gfs_0p50",
 #If this throws an error, try urls.out[2]
 #because sometimes the web page appears before the data does
 
-model.parameters <- ParseModelPage(urls.out[1])
+model.parameters <- ParseModelPage(urls.out[2])
 
 #Get 6 hr prediction
 #This will be 6 to 12 hours from now
@@ -203,10 +203,10 @@ model.parameters <- ParseModelPage(urls.out[1])
 pred.6hr <- model.parameters$pred[grep("06$", model.parameters$pred)]
 
 
-grib.info <- GribGrab(urls.out[1], pred.6hr, 
+grib.info <- GribGrab(urls.out[2], pred.6hr, 
     levels, variables, verbose = FALSE)
 
-grb.data <- ReadGrib(grib.info$file.name, levels, variables)
+grb.data <- ReadGrib(grib.info[[1]]$file.name, levels, variables)
 
 #Make an array for quick indexing
 atmos <- ModelGrid(grb.data, resolution)
@@ -274,7 +274,7 @@ Jet streams may show up here as patchy regions of intense wind.}
 \begin{center}
 \includegraphics{fig_ground_gust.png}
 \end{center}
-\caption{Wind gust speed at the ground surface 6 hours from latest GFS run.
+\caption{6 hour forecast of wind gust speed at the ground surface.
 Hurricanes and tropical storms show up as small white dots.}
 \label{fig:ground_gust}
 \end{figure}
@@ -314,7 +314,7 @@ urls.out <- CrawlModels(abbrev = "gfs_0p50",
 #If this throws an error, try urls.out[2]
 #because sometimes the web page appears before the data does
 
-model.parameters <- ParseModelPage(urls.out[1])
+model.parameters <- ParseModelPage(urls.out[2])
 
 #Get latest prediction
 
@@ -336,9 +336,9 @@ lon <- -79.052104
 lat <- 35.907553
 
 #Get grib file
-grib.info <- GribGrab(urls.out[1], pred.now, levels, variables,
+grib.info <- GribGrab(urls.out[2], pred.now, levels, variables,
    model.domain = c(lon - 2, lon + 2, lat + 2, lat - 2))
-model.data <- ReadGrib(grib.info$file.name, levels, variables)
+model.data <- ReadGrib(grib.info[[1]]$file.name, levels, variables)
 
 #Build atmospheric profile
 profile <- BuildProfile(model.data, lon, lat, 
