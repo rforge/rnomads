@@ -87,3 +87,4 @@ Created a new function, SubsetNOMADS, that allows easy subsetting of GribRead an
 
 2-3.1
 Put some warnings in BuildProfile to alert users about issues that could occur if they ask for points outside the model domain, or if not enough points for proper spatial interpolation are used.
+Now you can download multiple grib files from NOMADS in sequence, note the output from GribGrab is now a list with multiple elements.

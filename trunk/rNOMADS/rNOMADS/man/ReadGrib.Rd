@@ -98,21 +98,6 @@ model.grid <- ModelGrid(model.data, c(0.5, 0.5))
 #Show an image of world temperature at ground level
 image(model.grid$z[2, 1,,])
 
-
-#Archived Data Extraction
-#This is sometimes in GRIB1 format
-#This example is in GRIB1
-
-abbrev <- "gfsanl"
-model.date <- 20040302 #March 2, 2004
-model.run <- 18 #1800 GMT model run
-pred <- 0 #Analysis
-
-grib.info <- ArchiveGribGrab(abbrev, model.date, model.run,
-    pred, file.type = "grib1")
-
-model.data <- ReadGrib(grib.info$file.name, c("1000 mb"), c("TMP"), 
-    file.type = "grib1")
 }
 }
 \keyword{ file }
