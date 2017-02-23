@@ -298,7 +298,7 @@ model.data <- DODSGrab(latest.model, latest.model.run,
    levels = lev, display.url = FALSE)
 
 #Build atmospheric profile
-profile <- BuildProfile(model.data, lon, lat, 
+profile <- BuildProfile(model.data, lon + 360, lat, 
     spatial.average = TRUE, points = 8)
 
 hgt <- profile[[1]]$profile.data[, which(variables == "hgtprs"),]

@@ -88,3 +88,10 @@ Created a new function, SubsetNOMADS, that allows easy subsetting of GribRead an
 2-3.1
 Put some warnings in BuildProfile to alert users about issues that could occur if they ask for points outside the model domain, or if not enough points for proper spatial interpolation are used.
 Now you can download multiple grib files from NOMADS in sequence, note the output from GribGrab is now a list with multiple elements.
+
+2-3.2
+Incremented version number due to CRAN resubmission, but this is essentially the same as 2-3.1
+
+2-3.3
+Fixed issue with https transition for archived DODS models.
+This will crop up every time NOMADS switches part of their site.
