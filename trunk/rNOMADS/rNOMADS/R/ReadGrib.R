@@ -105,8 +105,8 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, file.type = "
         #Declare vectors
         model.run.date <- c()
         forecast.date  <- c()
-        variables      <- c()
-        levels         <- c()
+        variables.tmp  <- c()
+        levels.tmp     <- c()
         lon            <- c()
         lat            <- c()
         value          <- c()
@@ -155,8 +155,8 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, file.type = "
                 chunk.inds <- seq(1, length(model.data.vector) - 6, by = 7)
                 model.run.date <- c(model.run.date, model.data.vector[chunk.inds])
                 forecast.date  <- c(forecast.date, model.data.vector[chunk.inds + 1])
-                variables      <- c(variables, model.data.vector[chunk.inds + 2])
-                levels         <- c(levels, model.data.vector[chunk.inds + 3])
+                variables.tmp  <- c(variables.tmp, model.data.vector[chunk.inds + 2])
+                levels.tmp     <- c(levels.tmp, model.data.vector[chunk.inds + 3])
                 lon            <- c(lon, as.numeric(model.data.vector[chunk.inds + 4]))
                 lat            <- c(lat, as.numeric(model.data.vector[chunk.inds + 5]))
                 value          <- c(value, model.data.vector[chunk.inds + 6])
@@ -164,14 +164,29 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, file.type = "
             }
       }
 
+      #Only return variables and levels the user asked for (wgrib2 matches substrings)
+
+      v.i <- rep(0, length(variables.tmp))
+      l.i <- v.i
+ 
+      for(k in 1:length(variables)) {
+          v.i <- v.i + (variables.tmp == variables[k])
+      }
+
+      for(k in 1:length(levels)) {
+          l.i <- l.i + (levels.tmp == levels[k])
+      }
+
+      k.i <- which(v.i & l.i)
+
       model.data <- list(
-          model.run.date = model.run.date,
-          forecast.date  = forecast.date,
-          variables      = variables,
-          levels         = levels,
-          lon            = lon,
-          lat            = lat,
-          value          = value,
+          model.run.date = model.run.date[k.i],
+          forecast.date  = forecast.date[k.i],
+          variables      = variables.tmp[k.i],
+          levels         = levels.tmp[k.i],
+          lon            = lon[k.i],
+          lat            = lat[k.i],
+          value          = value[k.i],
           meta.data = "None - this field is used for grib1 files",
           grib.type = file.type
           )
