@@ -21,7 +21,6 @@ GetDODSModelRunInfo(model.url, model.run, download.file=TRUE)
      If \code{TRUE}, download the DODS \code{.info} file and read it in.
      If \code{FALSE}, try and read the \code{.info} file directly from the Internet.}
 }
-}
 \details{
 This routine grabs information about the latitude, longitude, and time coverage of a specific model instance.
 It also finds data about levels (if present) and lists all the available variables (though they may not have data in them).

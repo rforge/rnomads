@@ -1,0 +1,35 @@
+\name{SanitizeWGrib2Inputs}
+\alias{SanitizeWGrib2Inputs}
+\title{
+Make sure regex metacharacters are properly escaped
+}
+\description{
+An internal routine for ensuring that system calls to wgrib2 do not include unescaped regex characters.
+}
+\usage{
+SanitizeWGrib2Inputs(check.strs)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{check.strs}{
+    A vector of strings destined for subset arguments into WGrib2.
+}
+}
+\details{
+This is an internal function that helps make sure variable and level names have properly escaped regex characters.
+Note that it does not handle backslash.
+}
+\value{
+\item{checked.strs}{A vector of strings with properly escaped regex characters}
+}
+\author{
+Daniel C. Bowman \email{daniel.bowman@unc.edu}
+}
+
+\examples{
+
+check.strs <- c("1.2 mb", "3^4 watts")
+checked.strs <- SanitizeWGrib2Inputs(check.strs)
+print(checked.strs)
+}
+\keyword{ internal }

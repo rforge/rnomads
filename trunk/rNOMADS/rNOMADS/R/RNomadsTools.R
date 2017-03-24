@@ -626,5 +626,3 @@ ensembles = NULL, forecast.date = NULL, model.run.date = NULL) {
    }
    return(model.data.sub)
 }
-
-          

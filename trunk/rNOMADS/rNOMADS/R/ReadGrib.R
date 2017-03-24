@@ -71,6 +71,8 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, file.type = "
                 You can find wgrib2 here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib2/.
                 If the binaries don't work, try compiling from source.")
         }
+        #variables <- SanitizeWGrib2Inputs(variables)
+        #levels <- SanitizeWGrib2Inputs(levels)
         match.str <- ' -match "('
         for(var in variables) {
             match.str <- paste(match.str, var, "|", sep = "")
@@ -239,3 +241,23 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, file.type = "
 
     return(model.data)
 }
+
+#SanitizeWGrib2Inputs <- function(check.strs) {
+#   #Escape regex characters before inputting to wgrib2
+#   #INPUTS
+#   #    CHECK.STRS - Strings possibly containing regex metacharacters
+#   #OUTPUTS
+#   #    CHECKED.STRS - Strings with metacharacters appropriately escaped
+#
+#   meta.chars <- paste0("\\", c("(", ")", ".", "+", "*", "^", "$", "?", "[", "]", "|"))
+#
+#   for(k in 1:length(meta.chars)) {
+#      check.strs <- stringr::str_replace(check.strs, meta.chars[k], paste0("\\\\", meta.chars[k]))
+#   }
+#
+#   checked.strs <- check.strs
+#
+#   return(checked.strs)
+#}
+#
+#
