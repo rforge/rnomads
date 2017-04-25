@@ -88,11 +88,20 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
     #       $PROFILE.DATA - A date x levels x variables matrix with atmospheric data for given point
     #       $LOCATION - A two element vector the lat/lon coordinates of the locations
     #       $FORECAST.DATE - Date and time of forecast
+
     if(!is.null(model.data$ensembles)) {
        if(length(unique(model.data$ensembles)) > 1) {
-          stop("There appears to be more than one ensembles run in your data set!  BuildProfile can only handle one at a time.")
+          stop("There appears to be more than one ensembles run in your data set!  BuildProfile can only handle one at a time.  Use SubsetNOMADS to split them up.")
        }
     }
+
+    #See what kind of longitude we're dealing with, if applicable
+    if(any(model.data$lon < 0)) {
+       west.negative <- TRUE
+    } else {
+       west.negative <- FALSE
+    }
+
     
     #Make sure profiles are in the model domain, if not: warn
     if((min(lon) <= min(model.data$lon) | 
