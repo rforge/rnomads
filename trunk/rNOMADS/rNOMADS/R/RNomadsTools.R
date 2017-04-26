@@ -95,23 +95,6 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
        }
     }
 
-    #See what kind of longitude we're dealing with, if applicable
-    if(any(model.data$lon < 0)) {
-       west.negative <- TRUE
-    } else {
-       west.negative <- FALSE
-    }
-
-    
-    #Make sure profiles are in the model domain, if not: warn
-    if((min(lon) <= min(model.data$lon) | 
-        max(lon) >= max(model.data$lon) |
-        min(lat) <= min(model.data$lat) |
-        max(lat) >= max(model.data$lat))) {
-        
-        warning(paste0("At least one profile point is outside of the model domain.\nModel latitude range: ", paste(range(model.data$lat), collapse = " "), "\nModel longitude range: ", paste(range(model.data$lon), collapse = " ")))
-     }
-
     profile   <- NULL
  
     variables <- unique(model.data$variables)
@@ -124,8 +107,29 @@ BuildProfile <- function(model.data, lon, lat, spatial.average = FALSE, points =
     ll.tmp <- as.numeric(unlist(strsplit(ll.u, " ")))
     ll.arr <- t(array(ll.tmp, dim = c(2, length(ll.tmp)/2)))[, 2:1]
 
+    #Standardize longitudes to permit model domain checks
+    lon.tmp.point <- lon
+    lon.tmp.model <- unique(model.data$lon)
+    if(any(lon.tmp.model < 0)) {
+        lon.tmp.point[lon.tmp.point < 0] <- lon.tmp.point[lon.tmp.point < 0] + 360
+        lon.tmp.model[lon.tmp.model < 0] <- lon.tmp.model[lon.tmp.model < 0] + 360
+    }
+    lon.span <- range(lon.tmp.model)
+    lat.tmp.point <- lat #Pedantic, but I'm human after all
+    lat.span <- range(model.data$lat)
+ 
     profile.warning <- FALSE
     for(k in 1:length(lon)) { 
+   
+        if((lon.tmp.point[k] < min(lon.span)) | 
+           (lon.tmp.point[k] > max(lon.span)) | 
+           (lat.tmp.point[k] > max(lat.span)) | 
+           (lat.tmp.point[k] < min(lat.span))) {
+ 
+           warning(paste0("Profile point ", k, " of ", length(lon), " may be outside of the model domain, or it's simply close to (the antipode of) the prime meridian.\n", 
+           "See GetProfile documentation for details."))
+        }
+
         dist <- fields::rdist.earth(ll.arr, cbind(lon[k], lat[k]))
         profile.data <- array(NA,
             dim = c(length(levels), length(variables), length(times)))
