@@ -161,8 +161,8 @@ SanitizeURL <- function(bad.strs) {
 #        GOOD.STRS - A vector of strings with illegal characters replaced by URL codes
 
    good.strs <- stringr::str_replace_all(bad.strs,  "\\^", "%5E")
-   good.strs <- stringr::str_replace_all(good.strs,  "\\\\\\(", "%5C%28")
-   good.strs <- stringr::str_replace_all(good.strs,  "\\\\\\)", "%5C%29")
+   good.strs <- stringr::str_replace_all(good.strs,  "\\(", "%5C%28")
+   good.strs <- stringr::str_replace_all(good.strs,  "\\)", "%5C%29")
    good.strs <- stringr::str_replace_all(good.strs,  "\\\\", "%5C")
    good.strs <- stringr::str_replace_all(good.strs, "=","%3D")
    good.strs <- stringr::str_replace_all(good.strs, "/", "%2F")
