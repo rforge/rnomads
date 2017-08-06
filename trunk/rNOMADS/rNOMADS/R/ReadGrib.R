@@ -32,7 +32,7 @@ GribInfo <- function(grib.file, file.type = "grib2") {
         inv <- system(paste0("wgrib ", grib.file), " -s", intern = TRUE)
         grid <- NULL
     } else {
-        stop(paste0("Did not recognise file type ", file.type, ".  Please use \"grib2\" or \"grib.\""))
+        stop(paste0("Did not recognise file type ", file.type, ".  Please use \"grib2\" or \"grib1\"."))
     }
     return(list(inventory = inv, grid = grid))
 }
