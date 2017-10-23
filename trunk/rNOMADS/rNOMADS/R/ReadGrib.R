@@ -37,7 +37,7 @@ GribInfo <- function(grib.file, file.type = "grib2") {
     return(list(inventory = inv, grid = grid))
 }
 
-ReadGrib <- function(file.names, levels, variables, domain = NULL, domain.type = "latlon", file.type = "grib2", missing.data = NULL) {
+ReadGrib <- function(file.names, levels, variables, domain = NULL, forecasts = NULL, domain.type = "latlon", file.type = "grib2", missing.data = NULL) {
     #This is a function to read forecast data from Grib files
     #INPUTS
     #    FILE.NAMES - Vector of grib file names
@@ -45,6 +45,7 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, domain.type =
     #    LEVELS - which levels to extract data from
     #    DOMAIN - Region to extract data from, in c(LEFT LON, RIGHT LON, TOP LAT, BOTTOM LAT), west negative
     #    DOMAIN.TYPE - Either "latlon" (default), where the domain is a latitude/longitude box, or "index", where the model is subsetted based on the node index
+    #    FORECAST - A string indicating the forecast to extract.  Default NULL: return everything
     #    FILE.TYPE - whether this is a grib1 or a grib2 file
     #        If grib1, you must have the wgrib program installed
     #        If grib2, you must have the wgrib2 program installed
@@ -94,7 +95,16 @@ ReadGrib <- function(file.names, levels, variables, domain = NULL, domain.type =
         } else {
             match.str <- paste0(match.str, ")")
        }
-    
+   
+        if(length(forecasts) > 0 & !is.null(forecasts)) {
+            match.str <- paste(match.str, "):(", sep = "")
+            for(fcst in forecasts) {
+                match.str <- paste(match.str, fcst, "|", sep = "")
+            }
+        } else {
+            match.str <- paste0(match.str, ")")
+       }
+   
         match.str.lst <- strsplit(match.str, split = "")[[1]]
         match.str <- paste(match.str, '"', sep = "")
         match.str <- paste(match.str.lst[1:(length(match.str.lst) - 1)], collapse = "")
