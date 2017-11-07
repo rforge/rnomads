@@ -113,7 +113,6 @@ ReadGrib <- function(file.names, levels, variables, forecasts = NULL, domain = N
         match.str <- paste(match.str.lst[1:(length(match.str.lst) - 1)], collapse = "")
         match.str <- paste(match.str, ")\"", sep = "")
   
-        print(match.str) 
         if(!is.null(missing.data) & !is.numeric(missing.data)) {
             warning(paste("Your value", missing.data, " for missing data does not appear to be a number!"))
         }
