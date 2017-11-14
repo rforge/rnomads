@@ -203,7 +203,7 @@ ReadGrib <- function(file.names, levels, variables, forecasts = NULL, domain = N
       }
 
       for(k in 1:length(levels)) {
-          l.i <- l.i + (levels.tmp == levels[k])
+          l.i <- l.i + (levels.tmp == stringr::str_replace_all(levels[k],  "\\\\", ""))
       }
 
       k.i <- which(v.i & l.i)
@@ -265,6 +265,7 @@ ReadGrib <- function(file.names, levels, variables, forecasts = NULL, domain = N
                levels    = levels, 
                grib.type = file.type)
     }
-
+    
+    model.data$value <- as.numeric(model.data$value)
     return(model.data)
 }
