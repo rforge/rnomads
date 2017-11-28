@@ -19,7 +19,15 @@ GribInfo <- function(grib.file, file.type = "grib2") {
                 If the binaries don't work, try compiling from source.")
         }
         inv <- system(paste0("wgrib2 ", grib.file, " -inv -"), intern = TRUE)
+        cygwin.warning <- FALSE
+        if(any(grepl("cygwin warning", inv))) {
+            inv <- inv[7:length(inv)]
+         }
         grid <- system(paste0("wgrib2 ", grib.file, " -grid"), intern = TRUE) 
+        if(any(grepl("cygwin warning", grid))) {
+            grid <- grid[7:length(grid)]
+        }
+
     } else if (file.type == "grib1") {
          op <- options("warn")
          options(warn = -1)
@@ -170,7 +178,11 @@ ReadGrib <- function(file.names, levels, variables, forecasts = NULL, domain = N
             
             #Get the data from the grib file in CSV format
             if(Sys.info()[["sysname"]] == "Windows") {
-                csv.str <- shell(wg2.str, intern = TRUE)        
+                csv.str <- shell(wg2.str, intern = TRUE) 
+                #Thank you for this one, Windows
+                if(csv.str[1] == "cygwin warning:") {
+                     csv.str <- csv.str[7:length(csv.str)]
+                }
             } else {
                 csv.str <- system(wg2.str, intern = TRUE)
             } 
