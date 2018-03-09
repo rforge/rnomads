@@ -131,21 +131,6 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
                   6])
             }
         }
-        v.i <- rep(0, length(variables.tmp))
-        l.i <- v.i
-        for (k in 1:length(variables)) {
-            v.i <- v.i + (variables.tmp == variables[k])
-        }
-        for (k in 1:length(levels)) {
-            l.i <- l.i + (levels.tmp == stringr::str_replace_all(levels[k],
-                "\\\\", ""))
-        }
-        k.i <- which(v.i & l.i)
-        model.data <- list(model.run.date = model.run.date[k.i],
-            forecast.date = forecast.date[k.i], variables = variables.tmp[k.i],
-            levels = levels.tmp[k.i], lon = lon[k.i], lat = lat[k.i],
-            value = value[k.i], meta.data = "None - this field is used for grib1 files",
-            grib.type = file.type)
     }
     else if (file.type == "grib1") {
         op <- options("warn")
@@ -155,12 +140,11 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
         if (attr(test, "status") != 8) {
             stop("wgrib does not appear to be installed, or it is not on the PATH variable.\n                  You can find wgrib here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib.html.\n It is also available as an Ubuntu package.")
         }
-        model.data= list()
-        model.data$meta.data <- NULL
-        model.data$value <- c()
-        model.data$variables <- c()
-        model.data$levels <- c()
-        c <- 1
+        value         <- c()
+        variables.tmp <- c()
+        levels.tmp    <- c()
+        lat           <- c()
+        lon           <- c()
         for (file.name in file.names) {
             if (!file.exists(file.name)) {
                 warning(paste("Grib file", file.name, "was not found."))
@@ -182,21 +166,63 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
                   #Figure out grid
                   lat.i <- which(grepl(" lat ", out))
                   lon.i <- which(grepl(" long ", out))
-                  lat.def <- stringr::str_extract_all(out[lat.i], "-?\\d+\\.?\\d+")
-                  lon.def <- stringr::str_extract_all(out[lon.i], "-?\\d+\\.?\\d+")
-                  values <- scan("tmp.txt", skip = 1,
-                    quiet = TRUE)
-                  model.data$value <- c(model.data$value, values)
-                  model.data$variables <- c(model.data$variables, rep(var, length(values)))
-                  model.data$levels <- c(model.data$levels, rep(lvl, length(values)))
-                  c <- c + 1
-                  ###
+                  lat.def <- as.numeric(stringr::str_extract_all(out[lat.i], "-?\\d+\\.?\\d+")[[1]])
+                  lon.def <- as.numeric(stringr::str_extract_all(out[lon.i], "-?\\d+\\.?\\d+")[[1]])
+
+                  if((lat.def[2] < lat.def[1]) & (lat.def[3] > 0)) {
+                       lats <- seq(lat.def[1], lat.def[2], -1 * lat.def[3])
+                  } else {
+                       lats <- seq(lat.def[1], lat.def[2], by = lat.def[3])
+                  }
+                  
+                  if(lon.def[2] < 0) {
+                      lons <- seq(lon.def[1], lon.def[2] + lon.def[4], by = lon.def[3])
+                  } else {
+                      lons <- seq(lon.def[1], lon.def[2], by = lon.def[3])
+                  }
+
+                  if((length(lats) != lon.def[5]) | (length(lons) != lon.def[4])) {
+                      stop(paste0("Grid definition error: Expected ", 
+                          lon.def[4], 
+                          " longitudes but found ", 
+                          length(lons), 
+                          "; expected ", 
+                          lon.def[5], 
+                          " latitudes but found ", 
+                          length(lats), "."))
+                  }
+
+                  value          <- c(value, scan("tmp.txt", skip = 1,
+                                    quiet = TRUE))
+                  variables.tmp <- c(varables.tmp, rep(var, length(values)))
+                  levels.tmp     <- c(levels.tmp, rep(lvl, length(values)))
+                  lon            <- c(lon, rep(lons, length(lats)))
+                  lat            <- c(lat, 
+                                     as.vector(t(array(rep(lats, length(lons)), 
+                                     dim = c(length(lats), length(lons))))))
                 }
             }
+            
         }
-        #model.data <- list(meta.data = meta.data, value = value,
-        #    variables = variables, levels = levels, grib.type = file.type)
     }
+
+    #Remove unwanted variable/level combinations extracted by partial grep matches
+    v.i <- rep(0, length(variables.tmp))
+    l.i <- v.i
+    for (k in 1:length(variables)) {
+        v.i <- v.i + (variables.tmp == variables[k])
+    }
+    for (k in 1:length(levels)) {
+       l.i <- l.i + (levels.tmp == stringr::str_replace_all(levels[k],
+           "\\\\", ""))
+    }
+    k.i <- which(v.i & l.i)
+    model.data <- list(model.run.date = model.run.date[k.i],
+        forecast.date = forecast.date[k.i], variables = variables.tmp[k.i],
+        levels = levels.tmp[k.i], lon = lon[k.i], lat = lat[k.i],
+        value = value[k.i],
+        grib.type = file.type)
+
     model.data$value <- as.numeric(unlist(model.data$value))
     return(model.data)
 }
