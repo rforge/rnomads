@@ -135,16 +135,18 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
     else if (file.type == "grib1") {
         op <- options("warn")
         options(warn = -1)
-        test <- tryCatch(system("wgrib", intern = TRUE))
+        test <- tryCatch(system("wgrib", intern = TRUE, ignore.stderr = TRUE))
         options(op)
         if (attr(test, "status") != 8) {
             stop("wgrib does not appear to be installed, or it is not on the PATH variable.\n                  You can find wgrib here: http://www.cpc.ncep.noaa.gov/products/wesley/wgrib.html.\n It is also available as an Ubuntu package.")
         }
-        value         <- c()
-        variables.tmp <- c()
-        levels.tmp    <- c()
-        lat           <- c()
-        lon           <- c()
+        value          <- c()
+        variables.tmp  <- c()
+        levels.tmp     <- c()
+        model.run.date <- c()
+        forecast.date  <- c()
+        lat            <- c()
+        lon            <- c()
         for (file.name in file.names) {
             if (!file.exists(file.name)) {
                 warning(paste("Grib file", file.name, "was not found."))
@@ -157,12 +159,29 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
                     file.name, " -o tmp.txt")
                     print(wg.str)
                   if (Sys.info()[["sysname"]] == "Windows") {
-                      out <- shell(wg.str, intern = TRUE)
+                      out <- shell(wg.str, intern = TRUE, ignore.stderr = TRUE)
                   } else {
-                      out <- system(wg.str, intern = TRUE)
+                      out <- system(wg.str, intern = TRUE, ignore.stderr = TRUE)
                   }
                  
-                  ###
+                  #Figure out dates
+                  model.run.tmp <- as.POSIXct(
+                      stringr::str_extract(stringr::str_extract(
+                      out[1], "date \\d+"), "\\d+"), 
+                      format = "%Y%m%d%H", 
+                      tz = "UTC")
+
+                  if(grepl("anl:$", out[1])) {
+                      hr <- 0
+                  } else if (grepl("\\d+hr fcst$")) {
+                      hr <- as.numeric(
+                          stringr::str_extract(stringr::str_extract(
+                          out[1], "\\d+hr fcst:$"), "\\d+"))
+                  } else {
+                      stop("Did not recognise forcast format.  Please contact the rNOMADS developer.")
+                  }
+                  fcst.tmp <- model.run.tmp + hr * 3600
+
                   #Figure out grid
                   lat.i <- which(grepl(" lat ", out))
                   lon.i <- which(grepl(" long ", out))
@@ -194,8 +213,10 @@ ReadGrib <- function (file.names, levels, variables, forecasts = NULL, domain = 
 
                   value          <- c(value, scan("tmp.txt", skip = 1,
                                     quiet = TRUE))
-                  variables.tmp <- c(varables.tmp, rep(var, length(values)))
-                  levels.tmp     <- c(levels.tmp, rep(lvl, length(values)))
+                  variables.tmp <- c(variables.tmp, rep(var, length(value)))
+                  levels.tmp     <- c(levels.tmp, rep(lvl, length(value)))
+                  model.run.date <- c(model.run.date, rep(model.run.tmp, length(value)))
+                  forecast.date  <- c(forecast.date, rep(fcst.tmp, length(value))) 
                   lon            <- c(lon, rep(lons, length(lats)))
                   lat            <- c(lat, 
                                      as.vector(t(array(rep(lats, length(lons)), 
