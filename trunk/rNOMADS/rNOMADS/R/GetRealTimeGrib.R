@@ -144,12 +144,35 @@ ParseModelPage <- function(model.url) {
 #            MODEL.PARAMETERS$LEVELS - the model levels
 #            MODEL.PARAMETERS$VARIABLES - the types of data provided by the models
 
-    html.code <- scrapeR::scrape(model.url, parse = FALSE)
-    model.parameters <- list()
-    model.parameters$pred <- gsub("option value=\"", "", stringr::str_extract_all(html.code[[1]], "option value=\"[^\"]+")[[1]])
-    model.parameters$levels <- gsub("lev_", "", stringr::str_extract_all(html.code[[1]], "lev_[^\"]+")[[1]], fixed = TRUE)
-    model.parameters$variables <- gsub("var_", "", stringr::str_extract_all(html.code[[1]], "var_[^\"]+")[[1]], fixed = TRUE)
-     
+    html <- readLines(model.url, warn = FALSE)
+
+    f.i <- which(grepl("<option value", html))
+    pred <- stringr::str_replace_all(
+        stringr::str_extract(html[f.i], "\".*\""), "\"", "")
+
+    checkboxes <- html[grepl("type=\"checkbox\"", html)]
+
+    v.i <- which(grepl("\"var_", checkboxes))
+    vars.tmp <- unlist(strsplit(checkboxes[v.i], "<input type=\"checkbox\"")) 
+    variables <- stringr::str_replace_all(
+        stringr::str_replace_all(
+        stringr::str_extract(vars.tmp, "\"var_.*\""),
+        "var_", ""),
+        "\"", "")
+
+    l.i <- which(grepl("\"lev_", checkboxes))
+    levs.tmp <- unlist(strsplit(checkboxes[l.i], "<input type=\"checkbox\""))
+    levels <- stringr::str_replace_all(
+        stringr::str_replace_all(
+        stringr::str_extract(levs.tmp, "\"lev_.*\""),
+        "lev_", ""),
+        "\"", "")
+
+    model.parameters <- list(
+        pred      = pred,
+        variables = variables[which(!is.na(variables))],
+        levels    = levels[which(!is.na(levels))])
+
     return(model.parameters)
 }
 
