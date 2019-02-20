@@ -69,7 +69,7 @@ ArchiveGribGrab <- function(abbrev, model.date, model.run, preds, local.dir = NU
         link.list <- unique(LinkExtractor(download.url))
     
         #Check if the requested file is where we think it is
-        if(sum(grepl(paste0(".*", file.part, "$"), link.list)) < 1) {
+        if(!any(grepl(file.part, link.list))) {
             warning(paste("The requested data file ending in", file.part, "does not appear to be in the archive. 
                 Try opening", download.url, "in a web browser to verify that it's missing."))
             next
