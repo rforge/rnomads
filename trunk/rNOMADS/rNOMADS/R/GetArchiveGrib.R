@@ -76,7 +76,11 @@ ArchiveGribGrab <- function(abbrev, model.date, model.run, preds, local.dir = NU
         }
     
         #Set up URL to file
-        grb.urls <- paste0(download.url, link.list[grepl(paste0(".*", file.part, "$"), link.list)])
+        grb.urls <- stringr::str_replace(
+            stringr::str_extract(
+            paste0(download.url, link.list[grepl(file.part, link.list)]), 
+            paste0("^.*", file.part, "><")),
+            "><", "")
     
         #Download the file
         if(length(grb.urls) > 1) {

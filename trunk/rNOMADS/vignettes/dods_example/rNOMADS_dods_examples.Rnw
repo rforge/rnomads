@@ -340,10 +340,12 @@ dev.off()
 meridional <- profile[[1]]$profile.data[, which(variables == "vgrdprs"),]
 zonal <- profile[[1]]$profile.data[, which(variables == "ugrdprs"),]
 
+s.i <- which(meridional < 1000 & zonal < 1000)
+
 #Let's make a spline 
 
-merid.spline <- splinefun(hgt, meridional, method = "natural")
-zone.spline  <- splinefun(hgt, zonal, method = "natural")
+merid.spline <- splinefun(hgt[s.i], meridional[s.i], method = "natural")
+zone.spline  <- splinefun(hgt[s.i], zonal[s.i], method = "natural")
 
 synth.hgt   <- seq(min(hgt), max(hgt), length.out = 1000)
 synth.merid <- merid.spline(synth.hgt)
