@@ -53,7 +53,7 @@ NOMADSRealTimeList <- function(url.type, abbrev = NULL) {
            grib.filter[k] <- stringr::str_extract(grib.filter.tmp, "cgi-bin.*\\.pl")
        }
 
-       if(grepl("OpenDAP-alt", gds.alt.tmp)) {
+       if(grepl("OpenDAP", gds.alt.tmp)) {
           gds.alt[k] <- stringr::str_replace_all(
               stringr::str_extract(gds.alt.tmp, "\"dods.*\""),
               "\"", "")
@@ -148,7 +148,6 @@ NOMADSArchiveList <- function(abbrev = NULL) {
         if(length(i) == 0) {
             stop(paste("The model you searched for:\"", abbrev, "\"is not included in rNOMADS.  Sorry!"))
         } else {
-            url <- paste0("https://nomads.ncdc.noaa.gov/data/", abbrev, "/")
             return(list(abbrev = abbrev, name = names[i], url = urls[i]))
         }
     }

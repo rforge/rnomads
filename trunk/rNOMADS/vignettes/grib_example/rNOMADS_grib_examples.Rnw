@@ -55,7 +55,6 @@ Hurricanes and tropical storms appear as small circular regions in this map.
 library(GEOmap)
 library(rNOMADS)
 library(fields)
-library(aqfig)
 
 #Get the latest 2 model instances
 urls.out <- CrawlModels(abbrev = "gfs_0p50", 
@@ -109,9 +108,6 @@ image(atmos$x + 180, sort(atmos$y), atmos$z[li,vi,,], col = colormap,
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA, shiftlon = 180)
 
-vertical.image.legend(col=colormap, 
-     zlim = range(atmos$z[li,vi,,]) - 272.15)
-
 #Turn of PNG device
 #Omit this line if you want to display image
 #rather than save to file
@@ -131,8 +127,6 @@ image(atmos$x + 180, atmos$y, atmos$z[li,vi,,], col = colormap,
     main = paste("World Temperature at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA, shiftlon = 180)
-vertical.image.legend(col=colormap, 
-     zlim = range(atmos$z[li,vi,,]) - 272.15)
 
 dev.off()
 @
@@ -151,8 +145,6 @@ image(atmos$x + 180, atmos$y, atmos$z[li,vi,,], col = colormap,
     atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA, shiftlon = 180)
-vertical.image.legend(col=colormap,
-    zlim = range(atmos$z[li,vi,,]))
 dev.off()
 @
 
@@ -173,8 +165,6 @@ image(atmos$x + 180, atmos$y, winds.vel, col = colormap,
     main = paste("World Wind Velocity at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA, shiftlon = 180)
-vertical.image.legend(col=colormap,
-    zlim = range(winds.vel))
 dev.off()
 @ 
 
@@ -221,8 +211,6 @@ image(atmos$x + 180, atmos$y, atmos$z[li, vi, ,], col = colormap,
     main = paste("World Wind Gust at Ground Surface:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA, shiftlon = 180)
-vertical.image.legend(col=colormap,
-    zlim = range(atmos$z[li,vi,,]))
 
 dev.off()
 

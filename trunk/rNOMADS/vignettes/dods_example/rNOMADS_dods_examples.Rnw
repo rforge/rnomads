@@ -46,7 +46,6 @@ Hurricanes and tropical storms appear as small circular regions in this map.
 library(GEOmap)
 library(rNOMADS)
 library(fields)
-library(aqfig)
 
 #Get latest GFS model
 
@@ -99,8 +98,6 @@ image(ground$x, sort(ground$y), ground$z[1,ind,,], col = colormap,
 #Plot coastlines
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA)
-vertical.image.legend(col=colormap, 
-    zlim = range(ground$z[1,ind,,]) - 272.15)
 
 #Turn of PNG device
 #Omit this line if you want to display image
@@ -119,8 +116,6 @@ image(atmos$x, atmos$y, atmos$z[1,ind,,], col = colormap,
     main = paste("World Temperature at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE, 
     MAPcol = NA)
-vertical.image.legend(col=colormap, 
-    zlim = range(atmos$z[1,ind,,]) - 272.15)
 dev.off()
 @
 
@@ -137,8 +132,6 @@ image(ground$x, ground$y, ground$z[1,ind,,], col = colormap,
     ground$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
-vertical.image.legend(col=colormap,
-    zlim = range(ground$z[1,ind,,]))
 
 dev.off()
 @
@@ -156,8 +149,6 @@ image(atmos$x, atmos$y, winds.vel, col = colormap,
     main = paste("World Wind Velocity at 300 mb:", atmos$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
-vertical.image.legend(col=colormap,
-    zlim = range(winds.vel))
 dev.off()
 @ 
 
@@ -182,8 +173,6 @@ image(ground.wind$x, ground.wind$y, ground.wind$z[1,1,,], col = colormap,
     ground.wind$fcst.date))
 plotGEOmap(coastmap, border = "black", add = TRUE,
     MAPcol = NA)
-vertical.image.legend(col=colormap,
-    zlim = range(ground.wind$z[1,1,,]))
 dev.off()
 
 @
